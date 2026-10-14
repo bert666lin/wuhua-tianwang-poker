@@ -1,0 +1,385 @@
+/* ===== 五华天王扑克 v5 设计 tokens =====
+ * 风格：清新通透棋牌 · 淡蓝渐变 + 毛玻璃 + 金色强调
+ * 参考：现代掼蛋大厅视觉语言
+ */
+
+/* ============================================================
+   等比缩放单位（手机适配的唯一入口）
+   ------------------------------------------------------------
+   历史问题：所有尺寸都按 1440x900 桌面写死 px，手机端只能靠
+   几百行 !important 逐个元素改小，改一处漏三处，于是手机上整体
+   偏大、还会溢出。现在统一改成「设计稿 px × 缩放单位」：
+
+     width: calc(72 * var(--u));   // 桌面 72px，手机自动等比缩小
+
+   --u   几何单位。基准 1024x620 = 这套界面按原始尺寸「不挤」所需的
+         最小画布（横向：手牌区 ~874 + 两侧座位；纵向：顶栏 56 +
+         手牌 170 + 底栏 64 + 中央留白）。取宽/高里更受限的那一维
+         等比缩放，≥基准时恒为 1px —— 桌面和 iPad 外观完全不变，
+         只有真正装不下的手机才会缩。
+   --ut  文字单位。曲线比 --u 平缓并有更高下限，避免手机上正文
+         跟着布局一起缩到看不清。
+
+   约定：大号展示文字（≥24px）用 --u 跟随布局缩放，正文（12~23px）
+   用 --ut，10~11px 的角标不缩放。
+   ============================================================ */
+:root {
+  --u: clamp(0.55px, min(100vw / 1024, 100vh / 620), 1px);
+  --ut: clamp(0.88px, min(100vw / 900, 100vh / 520), 1px);
+}
+
+/* 竖屏手机/小平板：竖排布局下高度不再是瓶颈，改成按宽度取档，
+   否则 100vh/760 会把整套 UI 放大、100vw/1280 又会缩得过小。 */
+@media (orientation: portrait) and (max-width: 900px) {
+  :root {
+    --u: clamp(0.62px, 100vw / 600, 0.92px);
+    --ut: clamp(0.92px, 100vw / 420, 1px);
+  }
+}
+
+/* ============================================================
+   主色系：紫色（紫金国潮）
+   ------------------------------------------------------------
+   变量名保留 blue-* 不改：这套名字被 14 个样式文件、上百处引用，
+   全量重命名的收益只是"名字好看"，却要动几百行、风险远大于价值。
+   语义已经换成紫色系，注释里标明实际色相即可。
+   关键：深色主题下"档位方向要反过来" —— 900 原本是深色标题色，
+   现在深底上标题必须是浅色，否则标题全部看不见（实测 14 个页面
+   的 h1 都在用 --c-blue-900）。
+   ============================================================ */
+:root {
+  /* 紫色系 12 档（低档=深，高档=浅，深色主题下高档用于文字） */
+  --c-blue-950: #FFFFFF;   /* 最强对比（纯白），用于关键标题 */
+  --c-blue-900: #F5F3FF;   /* 主标题色（近白微紫） */
+  --c-blue-800: #DDD6FE;   /* 次级标题 */
+  --c-blue-700: #A78BFA;   /* 品牌主色（亮紫，深底上可读） */
+  --c-blue-600: #8B5CF6;   /* 亮紫 */
+  --c-blue-500: #7C3AED;   /* 中紫（品牌基准） */
+  --c-blue-400: #6D28D9;   /* 深紫 */
+  --c-blue-300: #5B21B6;   /* 更深紫 */
+  --c-blue-200: #4C1D95;   /* 暗紫 */
+  --c-blue-100: #3A2C6E;   /* 卡片底紫 */
+  --c-blue-50:  #241B4A;   /* 最深（页面/卡片底） */
+
+  /* 金色系（强调/按钮/资产） */
+  --c-gold-800: #7C5A10;
+  --c-gold-700: #A16207;
+  --c-gold-600: #CA8A04;   /* 主金暗 */
+  --c-gold-500: #EAB308;   /* 主金 */
+  --c-gold-400: #FACC15;   /* 亮金 */
+  --c-gold-300: #FDE047;   /* 更亮金 */
+  --c-gold-200: #FEF08A;   /* 淡金 */
+  --c-gold-100: #FEF9C3;   /* 极淡金 */
+
+  /* 绿色系（成功/在线/组队按钮） */
+  --c-green-700: #15803D;
+  --c-green-600: #16A34A;
+  --c-green-500: #22C55E;   /* 主绿 */
+  --c-green-400: #4ADE80;
+  --c-green-300: #86EFAC;
+  --c-green-200: #BBF7D0;
+  --c-green-100: #DCFCE7;
+
+  /* 红色系（提醒/红点/警告）
+     红点角标里几乎全是 8~10px 的白色数字，#EF4444 上白字只有 3.76，
+     达不到 AA；把 500 压到 #C81E1E（白字 5.74）作为"红底"的默认值。 */
+  --c-red-600: #A81616;
+  --c-red-500: #C81E1E;
+  --c-red-bright: #EF4444;   /* 纯装饰用（描边/光晕/图标），不承载文字 */
+  /* #F87171 在深紫底只有 ~4.1，达不到小字 4.5；深底要更亮的红 */
+  --c-red-400: #FCA5A5;
+  --c-red-300: #FECACA;
+
+  /* 紫色系（高级场/装饰） */
+  --c-purple-600: #7C3AED;
+  --c-purple-500: #8B5CF6;
+  --c-purple-400: #A78BFA;
+
+  /* 橙色系（中级场/活动） */
+  --c-orange-600: #EA580C;
+  --c-orange-500: #F97316;
+  --c-orange-400: #FB923C;
+
+  /* 中性色 */
+  --c-white: #FFFFFF;
+  --c-gray-50:  #F9FAFB;
+  --c-gray-100: #F3F4F6;
+  --c-gray-200: #E5E7EB;
+  --c-gray-300: #D1D5DB;
+  --c-gray-400: #9CA3AF;
+  --c-gray-500: #6B7280;
+  --c-gray-600: #4B5563;
+  --c-gray-700: #374151;
+  --c-gray-800: #1F2937;
+  --c-gray-900: #111827;
+
+  /* ==========================================================
+     语义背景 —— 紫金国潮（深色）
+     ----------------------------------------------------------
+     全站统一到「深紫底 + 金色描边/文字」这一套：原来 tokens 是淡蓝系
+     （白玻璃卡片 + 深蓝文字），只有大厅和牌桌各自另写了紫金，导致
+     商城/排行/战绩/通知/个人中心等 11 个页面是蓝白风、和大厅割裂。
+     这里把语义层一次翻成深色，各页面无需逐个改就跟着统一。
+     ========================================================== */
+  --c-bg-deep: #140F2C;
+  --c-bg-card: rgba(36, 27, 74, 0.72);      /* 玻璃态卡片（深紫） */
+  --c-bg-card-strong: rgba(30, 22, 62, 0.9);
+  --c-bg-glass: rgba(255, 255, 255, 0.08);  /* 深底上的"玻璃"= 白色微透 */
+  --c-bg-soft: rgba(255, 255, 255, 0.05);
+
+  /* 边框：金色描边是国潮质感的关键 */
+  --c-border: rgba(251, 191, 36, 0.38);
+  --c-border-soft: rgba(255, 255, 255, 0.14);
+  --c-border-blue: rgba(124, 58, 237, 0.35);
+  --c-border-gold: rgba(251, 191, 36, 0.6);
+
+  /* 文字：深底 -> 浅字。层级用「白 -> 淡金 -> 半透白」区分 */
+  --c-text: #F5F3FF;          /* 主文字（近白，微紫调） */
+  --c-text-secondary: rgba(253, 230, 138, 0.92); /* 次文字（淡金） */
+  /* 0.58 / 0.38 是照浅底时代的比例平移过来的，在深紫底上分别只有
+     4.3 / 3.1 的对比度，小字（9~11px 是本项目最常用的辅助字号）达不到
+     WCAG AA 的 4.5。深底需要比浅底更高的不透明度才够看。 */
+  --c-text-mute: rgba(255, 255, 255, 0.78);      /* 辅助文字 */
+  /* dim 是「最淡的一档」，但项目里它大量用在 9~11px 的时间戳/空状态上。
+     0.55 在深紫底只有 ~3.9，仍不足 4.5，抬到 0.68。 */
+  --c-text-dim: rgba(255, 255, 255, 0.68);
+  --c-text-gold: #FCD34D;     /* 金色文字（深底上要更亮） */
+  --c-text-white: #FFFFFF;
+  /* 深底上偶尔仍需要"深色字"（如金色按钮上的文字）。
+     #4C1D95 在金渐变最暗端只有 3.93，压到 #2E0F5C 后暗端 5.63 / 亮端 13.5，
+     两端都过 AA，同时保持"国潮紫"的调子而不是纯黑。 */
+  --c-text-on-gold: #2E0F5C;
+
+  /* ----------------------------------------------------------
+     图标颜色（components/icons 的 tone="..." 映射到这里）
+     ----------------------------------------------------------
+     这组变量以前从未定义过，而图标组件把它们直接写进 SVG 的
+     stroke/fill。未定义的自定义属性在 SVG presentation attribute
+     上会解析失败并回落到 none —— 结果是所有带 tone 的图标
+     （关闭 ×、返回箭头、筛选等）都只剩一个透明外框，看不见图形。
+     所以这里必须给全，缺一个就少一类图标。 */
+  --icon-default:   var(--c-text);
+  --icon-gold:      var(--c-gold-400);
+  --icon-gold-soft: var(--c-gold-200);
+  --icon-gold-deep: var(--c-gold-600);
+  --icon-blue:      var(--c-blue-700);
+  --icon-blue-soft: var(--c-blue-800);
+  --icon-mute:      var(--c-text-mute);
+  --icon-soft:      var(--c-text-dim);
+  --icon-red:       var(--c-red-bright);
+  --icon-red-soft:  var(--c-red-400);
+  --icon-green:     var(--c-green-400);
+  --icon-warn:      var(--c-gold-500);
+  --icon-dark:      var(--c-text-on-gold);
+  --icon-white:     var(--c-text-white);
+
+  /* 发光 */
+  --c-glow-gold: 0 0 28px rgba(250, 204, 21, 0.45);
+  --c-glow-gold-soft: 0 0 14px rgba(250, 204, 21, 0.25);
+  --c-glow-blue: 0 0 24px rgba(59, 130, 246, 0.3);
+  --c-glow-red: 0 0 18px rgba(239, 68, 68, 0.4);
+
+  /* 阴影 */
+  --c-shadow: 0 10px 40px rgba(30, 84, 201, 0.12);
+  --c-shadow-sm: 0 4px 20px rgba(30, 84, 201, 0.08);
+  --c-shadow-deep: 0 24px 80px rgba(30, 84, 201, 0.2);
+  --c-shadow-fab: 0 10px 32px rgba(245, 200, 66, 0.45);
+  --c-shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* ============================================================
+   排版
+   ============================================================ */
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'PingFang SC',
+               'HarmonyOS Sans SC', 'Microsoft YaHei',
+               'Helvetica Neue', sans-serif;
+  --font-display: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+
+  /* 字号：≥24 跟几何缩放，12~23 用文字单位，10/11 的角标固定不缩 */
+  --fs-10: 10px;  --fs-11: 11px;
+  --fs-12: calc(12 * var(--ut));  --fs-13: calc(13 * var(--ut));
+  --fs-14: calc(14 * var(--ut));  --fs-15: calc(15 * var(--ut));
+  --fs-16: calc(16 * var(--ut));  --fs-18: calc(18 * var(--ut));
+  --fs-20: calc(20 * var(--ut));  --fs-22: calc(22 * var(--ut));
+  --fs-24: calc(24 * var(--u));   --fs-28: calc(28 * var(--u));
+  --fs-32: calc(32 * var(--u));   --fs-40: calc(40 * var(--u));
+  --fs-48: calc(48 * var(--u));   --fs-64: calc(64 * var(--u));
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  --fw-extrabold: 800;
+  --fw-black: 900;
+
+  --lh-tight: 1.1;
+  --lh-normal: 1.5;
+  --lh-relaxed: 1.6;
+
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.04em;
+  --tracking-wider: 0.08em;
+}
+
+/* ============================================================
+   间距 & 圆角 & 尺寸
+   ============================================================ */
+:root {
+  --sp-1: calc(4 * var(--u));   --sp-2: calc(8 * var(--u));   --sp-3: calc(12 * var(--u));
+  --sp-4: calc(16 * var(--u));  --sp-5: calc(20 * var(--u));  --sp-6: calc(24 * var(--u));
+  --sp-7: calc(32 * var(--u));  --sp-8: calc(40 * var(--u));  --sp-9: calc(56 * var(--u));
+  --sp-10: calc(72 * var(--u));
+
+  --r-xs: calc(4 * var(--u));   --r-sm: calc(8 * var(--u));   --r-md: calc(12 * var(--u));
+  --r-lg: calc(16 * var(--u));  --r-xl: calc(20 * var(--u));  --r-2xl: calc(28 * var(--u));
+  --r-3xl: calc(32 * var(--u));
+  --r-pill: 999px;
+
+  --border-thin: 1px;
+  --border-medium: 1.5px;
+  --border-thick: 2px;
+}
+
+/* ============================================================
+   渐变（核心视觉资产）
+   ============================================================ */
+:root {
+  /* 页面主背景：紫金国潮，和大厅 (#5B7BD9->#8E6FDD) 同族但更深，
+     保证白/金文字在上面对比度充足 */
+  --grad-page:
+    radial-gradient(ellipse 80% 50% at 30% 0%, rgba(124, 58, 237, 0.35) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 25%, rgba(251, 191, 36, 0.10) 0%, transparent 55%),
+    linear-gradient(180deg, #2A2055 0%, #201842 50%, #16112F 100%);
+
+  /* 玻璃态卡片渐变（顶部微亮）—— 深紫半透，叠在页面背景上有层次 */
+  --grad-card:
+    linear-gradient(180deg, rgba(58, 44, 110, 0.78) 0%, rgba(32, 24, 66, 0.72) 100%);
+  --grad-card-soft:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09) 0%, rgba(255, 255, 255, 0.05) 100%);
+
+  /* HUD / 顶栏 */
+  --grad-hud:
+    linear-gradient(180deg, rgba(36, 27, 74, 0.86) 0%, rgba(26, 20, 56, 0.72) 100%);
+
+  /* 金色按钮渐变（立体金属感） */
+  --grad-button:
+    linear-gradient(180deg,
+      #FEF08A 0%,
+      #FACC15 25%,
+      #F0BC0C 58%,
+      #DFA808 85%,
+      #C99106 100%);
+  --grad-button-hover:
+    linear-gradient(180deg,
+      #FEF9C3 0%,
+      #FDE047 25%,
+      #FACC15 55%,
+      #EAB308 85%,
+      #CA8A04 100%);
+  --grad-button-active:
+    linear-gradient(180deg,
+      #C99106 0%,
+      #DFA808 35%,
+      #F0BC0C 65%,
+      #FACC15 100%);
+
+  /* 绿色按钮 */
+  --grad-button-green:
+    linear-gradient(180deg,
+      #86EFAC 0%,
+      #4ADE80 25%,
+      #22C55E 55%,
+      #16A34A 85%,
+      #15803D 100%);
+  --grad-button-green-hover:
+    linear-gradient(180deg,
+      #BBF7D0 0%,
+      #86EFAC 25%,
+      #4ADE80 55%,
+      #22C55E 85%,
+      #16A34A 100%);
+
+  /* 次按钮（玻璃态）
+     原来是浅色主题遗留的「白 0.7 -> 0.5」，翻深色后上面配的是浅色文字，
+     结果 auth 的提交箭头 / settle 的次要按钮都变成"白底白字"。
+     改成深紫玻璃，浅字才站得住。 */
+  --grad-button-secondary:
+    linear-gradient(180deg, rgba(78, 62, 138, 0.85) 0%, rgba(44, 34, 88, 0.9) 100%);
+
+  /* 金色文字渐变 */
+  --grad-gold-text:
+    linear-gradient(180deg, #FDE047 0%, #CA8A04 100%);
+
+  /* 金色横条装饰线 */
+  --grad-gold-horizontal:
+    linear-gradient(90deg, transparent 0%, #FACC15 50%, transparent 100%);
+
+  /* 牌桌毛毡（游戏内桌面） */
+  --grad-table:
+    radial-gradient(ellipse 70% 60% at 50% 45%, rgba(34, 197, 94, 0.6) 0%, rgba(16, 185, 129, 0.75) 50%, rgba(5, 150, 105, 0.9) 100%);
+
+  /* 输入框 */
+  --grad-input:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.35) 100%);
+}
+
+/* ============================================================
+   阴影
+   ============================================================ */
+:root {
+  --sh-1: 0 2px 8px rgba(30, 84, 201, 0.06);
+  --sh-2: 0 4px 20px rgba(30, 84, 201, 0.08);
+  --sh-3: 0 10px 40px rgba(30, 84, 201, 0.12);
+  --sh-4: 0 18px 56px rgba(30, 84, 201, 0.18);
+  --sh-5: 0 36px 100px rgba(30, 84, 201, 0.25);
+
+  --sh-card: var(--sh-3);
+  --sh-card-sm: var(--sh-2);
+  --sh-card-hover: var(--sh-4);
+  --sh-fab: 0 10px 32px rgba(245, 200, 66, 0.45);
+
+  --sh-inset: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  --sh-inset-dark: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+
+  /* 金色发光阴影（选中卡片） */
+  --sh-gold-glow:
+    0 0 0 3px rgba(255, 255, 255, 0.6),
+    0 0 50px rgba(255, 220, 120, 0.3),
+    0 14px 48px rgba(30, 84, 201, 0.18);
+}
+
+/* ============================================================
+   动效
+   ============================================================ */
+:root {
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-soft-bounce: cubic-bezier(0.34, 1.28, 0.64, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-decelerate: cubic-bezier(0, 0, 0, 1);
+
+  --t-fast: 120ms;
+  --t-normal: 220ms;
+  --t-slow: 400ms;
+
+  --anim-fast: 120ms;
+  --anim-normal: 220ms;
+  --anim-enter: 360ms;
+  --anim-emphasis: 520ms;
+  --anim-breathing: 3s;
+}
+
+/* ============================================================
+   纹理 / 噪点
+   ============================================================ */
+:root {
+  --texture-noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.04 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* 触摸优化 */
+html { -webkit-text-size-adjust: 100%; }
+body { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }

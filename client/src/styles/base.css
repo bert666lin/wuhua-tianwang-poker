@@ -1,0 +1,63 @@
+/* ===== 通用基础样式 v3 ===== */
+/* 这个文件作为 v3 视觉基础，主要组件都从这里拉 token */
+
+@import './tokens.css';
+
+/* === 大圆头像（通用） === */
+.avatar-circle {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: calc(56 * var(--u)); height: calc(56 * var(--u));
+  border-radius: 50%;
+  background: var(--grad-card);
+  border: 2px solid var(--c-border);
+  color: var(--c-text-gold);
+  font-weight: 900; font-size: calc(20 * var(--ut));
+  /* 圆里放的是名字首字（汉字方块字）。默认 line-height 会让字的行盒
+     比圆还宽，配合 overflow:hidden 就会把字的左右边缘削掉一点。
+     line-height:1 + 不换行，字才完整居中。 */
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  box-shadow: var(--sh-2);
+}
+.avatar-circle.lg { width: calc(72 * var(--u)); height: calc(72 * var(--u)); font-size: calc(28 * var(--u)); }
+.avatar-circle.xl { width: calc(96 * var(--u)); height: calc(96 * var(--u)); font-size: calc(36 * var(--u)); }
+/* === 等级徽章（圆形头像下方/右侧的小标签） === */
+.level-badge {
+  position: absolute; right: calc(-4 * var(--u)); bottom: calc(-4 * var(--u));
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: 2px calc(8 * var(--u));
+  background: linear-gradient(180deg, #5C7CB0 0%, #2E3D6B 100%);
+  border: 1.5px solid var(--c-gold-400);
+  border-radius: var(--r-pill);
+  color: var(--c-text-gold);
+  font-size: 10px; font-weight: 900;
+  white-space: nowrap;
+  box-shadow: var(--sh-1);
+}
+.level-badge.gold { background: var(--grad-button); color: var(--c-text-on-gold); border-color: #6E5234; }
+.level-badge.silver { background: linear-gradient(180deg, #E4EAF4 0%, #B3C0DA 100%); color: #1A2440; border-color: #4F6198; }
+.level-badge.bronze { background: linear-gradient(180deg, #E3C4A2 0%, #C49A6A 100%); color: var(--c-text-on-gold); border-color: #6E5234; }
+
+/* === 标签 chip === */
+.chip {
+  display: inline-flex; align-items: center; gap: calc(4 * var(--u));
+  padding: 2px calc(8 * var(--u));
+  border-radius: var(--r-pill);
+  font-size: 11px; font-weight: 800;
+  background: rgba(143, 160, 200, 0.15);
+  color: var(--c-text-mute);
+  border: 1px solid var(--c-border-soft);
+}
+.chip-gold { background: var(--grad-gold-soft); color: var(--c-text-gold); border-color: var(--c-border); }
+
+/* === 通用面板（玻璃态） === */
+.panel {
+  background: var(--grad-card);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-3), var(--sh-inset);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}

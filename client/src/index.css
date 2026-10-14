@@ -1,0 +1,242 @@
+/* ===== 全局样式 v5 — 清新通透棋牌风格 ===== */
+@import './styles/tokens.css';
+/* 通用基础组件（.avatar-circle / .level-badge / .chip / .panel）。
+   以前这个文件没有任何地方 import，导致 Profile / Records 里的头像和
+   段位徽章完全没样式：头像不是圆的、徽章不定位，「玩」和「青铜」直接
+   并排挤成一行。必须在各页面 CSS 之前引入，页面里的规则仍可覆盖。 */
+@import './styles/base.css';
+/* 触控下限兜底：必须在各页面 CSS 之前引入，页面里的具体规则仍可覆盖它 */
+@import './styles/_touch-floor.css';
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-14);
+  line-height: var(--lh-normal);
+  background: var(--grad-page);
+  color: var(--c-text);
+  user-select: none;
+  -webkit-user-select: none;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  position: relative;
+}
+
+/* 全页噪点质感 */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: var(--texture-noise);
+  background-size: 200px 200px;
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 9999;
+  mix-blend-mode: overlay;
+}
+
+#root { width: 100%; height: 100%; position: relative; }
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.25);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(59, 130, 246, 0.4); }
+
+img {
+  -webkit-user-drag: none;
+  user-drag: none;
+  pointer-events: none;
+}
+
+/* ============================================================
+   通用玻璃态
+   ============================================================ */
+.glass {
+  background: var(--c-bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  position: relative;
+}
+.glass::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  pointer-events: none;
+}
+
+.glass-strong {
+  background: var(--c-bg-card-strong);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid var(--c-border);
+}
+
+.glass-thin {
+  background: var(--c-bg-glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--c-border-soft);
+}
+
+/* ============================================================
+   通用按钮
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 22px;
+  font-family: var(--font-sans);
+  font-size: var(--fs-14);
+  font-weight: var(--fw-extrabold);
+  letter-spacing: 0.04em;
+  border: none;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    transform var(--anim-fast) var(--ease-spring),
+    filter var(--anim-fast) var(--ease-standard),
+    box-shadow var(--anim-fast) var(--ease-standard);
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  overflow: hidden;
+}
+.btn:active:not(:disabled) { transform: scale(0.96); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* 顶部高光层 */
+.btn::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.4), transparent);
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* 主按钮（金色） */
+.btn-primary {
+  background: var(--grad-button);
+  color: #7C2D12;
+  box-shadow:
+    var(--sh-fab),
+    var(--sh-inset);
+}
+.btn-primary:not(:disabled):hover {
+  filter: brightness(1.06);
+  box-shadow:
+    0 14px 40px rgba(245, 200, 66, 0.5),
+    var(--sh-inset);
+}
+
+/* 绿色按钮 */
+.btn-green {
+  background: var(--grad-button-green);
+  color: #064E3B;
+  box-shadow:
+    0 6px 20px rgba(34, 197, 94, 0.35),
+    var(--sh-inset);
+}
+.btn-green:not(:disabled):hover {
+  filter: brightness(1.06);
+  box-shadow:
+    0 10px 28px rgba(34, 197, 94, 0.45),
+    var(--sh-inset);
+}
+
+/* 次按钮（玻璃） */
+.btn-secondary {
+  background: var(--grad-button-secondary);
+  color: var(--c-text);
+  border: 1px solid var(--c-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.btn-secondary:not(:disabled):hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.6) 100%);
+}
+
+/* 幽灵按钮 */
+.btn-ghost {
+  background: transparent;
+  color: var(--c-text-mute);
+  border: 1px solid var(--c-border-soft);
+}
+.btn-ghost:not(:disabled):hover {
+  color: var(--c-text);
+  border-color: var(--c-border);
+  background: var(--c-bg-soft);
+}
+
+/* ============================================================
+   通用文字工具类
+   ============================================================ */
+.text-gold { color: var(--c-gold-600); }
+.text-mute { color: var(--c-text-mute); }
+.text-dim { color: var(--c-text-dim); }
+.text-red { color: var(--c-red-500); }
+.text-green { color: var(--c-green-600); }
+.text-blue { color: var(--c-blue-600); }
+
+.font-display { font-family: var(--font-display); font-weight: var(--fw-bold); }
+.font-mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* ============================================================
+   通用动画
+   ============================================================ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(250, 204, 21, 0.3); }
+  50% { box-shadow: 0 0 28px rgba(250, 204, 21, 0.6); }
+}
+@keyframes float-gentle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.7; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

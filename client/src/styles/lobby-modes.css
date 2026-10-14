@@ -1,0 +1,99 @@
+/* ===== 玩法卡网格 v5 ===== */
+
+/* 6 模式网格（兼容旧路径） */
+.lobby-modes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-3);
+}
+
+.lobby-mode {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(6 * var(--u));
+  padding: var(--sp-4) var(--sp-2);
+  background: var(--c-bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
+  cursor: pointer;
+  transition: all var(--anim-normal) var(--ease-spring);
+  text-align: center;
+  min-height: calc(96 * var(--u));
+  overflow: hidden;
+  box-shadow: var(--sh-card-sm);
+}
+
+.lobby-mode::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.7), transparent);
+  pointer-events: none;
+}
+
+.lobby-mode:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sh-card);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.lobby-mode.is-active {
+  border-color: var(--c-gold-400);
+  box-shadow:
+    0 0 0 1.5px var(--c-gold-400),
+    0 0 20px rgba(250, 204, 21, 0.3),
+    var(--sh-card);
+  background: rgba(255, 255, 255, 0.88);
+  transform: translateY(-2px);
+}
+
+.lobby-mode-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(40 * var(--u));
+  height: calc(40 * var(--u));
+  background: linear-gradient(135deg, var(--c-gold-300), var(--c-gold-500));
+  border-radius: 50%;
+  transition: all var(--anim-normal) var(--ease-spring);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.lobby-mode:hover .lobby-mode-icon,
+.lobby-mode.is-active .lobby-mode-icon {
+  transform: scale(1.1);
+  box-shadow: 0 0 16px rgba(250, 204, 21, 0.4);
+}
+
+.lobby-mode-label {
+  font-size: var(--fs-14);
+  font-weight: var(--fw-bold);
+  color: var(--c-text);
+  line-height: 1.2;
+}
+.lobby-mode.is-active .lobby-mode-label {
+  color: var(--c-gold-700);
+}
+
+.lobby-mode-sub {
+  font-size: var(--fs-11);
+  color: var(--c-text-mute);
+  line-height: 1.1;
+}
+
+/* 响应式：>768px 变 6 列 */
+@media (min-width: 768px) {
+  .lobby-modes {
+    grid-template-columns: repeat(6, 1fr);
+    gap: var(--sp-2);
+  }
+  .lobby-mode {
+    padding: var(--sp-3) var(--sp-1);
+    min-height: calc(72 * var(--u));
+  }
+  .lobby-mode-icon { width: calc(32 * var(--u)); height: calc(32 * var(--u)); }
+}

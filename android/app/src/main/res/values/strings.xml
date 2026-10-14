@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">天王扑克</string>
+    <string name="title_activity_main">天王扑克</string>
+    <string name="package_name">cn.geju8.tianwang</string>
+    <string name="custom_url_scheme">cn.geju8.tianwang</string>
+</resources>

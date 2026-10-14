@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>下载 · 梅州五华天王扑克</title>
+<meta name="description" content="梅州五华天王扑克安卓App下载，iPhone可添加到主屏幕全屏横屏玩。" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+<link rel="apple-touch-icon" href="/icon-180.png" />
+<meta name="theme-color" content="#140F2C" />
+<meta name="format-detection" content="telephone=no" />
+<!-- 这一页故意不做横屏锁定：它是下载/教学页，竖屏读文字最舒服。 -->
+<style>
+  :root{
+    --bg:#140F2C; --bg2:#241B4A;
+    --card:rgba(36,27,74,.72); --card2:rgba(255,255,255,.06);
+    --line:rgba(255,255,255,.14); --line-gold:rgba(251,191,36,.55);
+    --txt:#F5F3FF; --txt2:#C4BBE4; --txt3:#8F86B4;
+    --gold:#FCD34D; --gold2:#EAB308; --dark:#2E0F5C;
+    --green:#34D399;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #3B2A6E 0%, rgba(59,42,110,0) 60%),
+      linear-gradient(180deg,#1A1338 0%, var(--bg) 55%, #0F0B22 100%);
+    background-attachment:fixed;
+    color:var(--txt);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    min-height:100vh;
+    padding:0 0 40px;
+  }
+  .wrap{max-width:520px;margin:0 auto;padding:0 18px}
+
+  /* ── 头部 ── */
+  header{text-align:center;padding:30px 0 18px}
+  header img{width:108px;height:auto;display:block;margin:0 auto 12px;filter:drop-shadow(0 6px 20px rgba(0,0,0,.5))}
+  h1{margin:0;font-size:23px;font-weight:800;letter-spacing:1px;
+     background:linear-gradient(180deg,#FFF7DB 0%,var(--gold) 55%,#C99A17 100%);
+     -webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{margin:6px 0 0;color:var(--txt2);font-size:13.5px}
+
+  /* ── 卡片 ── */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;
+        padding:18px;margin:14px 0;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+  .card.hi{border-color:var(--line-gold);box-shadow:0 0 0 1px rgba(251,191,36,.12),0 10px 30px rgba(0,0,0,.35)}
+  .card h2{margin:0 0 4px;font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .card h2 .tag{font-size:11px;font-weight:600;color:var(--dark);background:linear-gradient(180deg,var(--gold),var(--gold2));
+        border-radius:999px;padding:2px 8px;letter-spacing:.5px}
+  .card .lead{margin:0 0 14px;color:var(--txt2);font-size:13.5px}
+
+  /* ── 按钮 ── */
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+       border:0;border-radius:12px;padding:15px 16px;font-size:16.5px;font-weight:700;
+       text-decoration:none;cursor:pointer;font-family:inherit}
+  .btn-primary{background:linear-gradient(180deg,#FDE047 0%,var(--gold2) 100%);color:var(--dark);
+       box-shadow:0 6px 18px rgba(234,179,8,.32)}
+  .btn-primary:active{transform:translateY(1px)}
+  .btn-ghost{background:var(--card2);color:var(--txt);border:1px solid var(--line);font-weight:600;font-size:15px;padding:13px 16px}
+  .btn+.btn{margin-top:10px}
+  .meta{margin:10px 0 0;text-align:center;color:var(--txt3);font-size:12px}
+
+  /* ── 步骤 ── */
+  ol.steps{margin:0;padding:0;list-style:none;counter-reset:s}
+  ol.steps li{position:relative;padding:0 0 14px 38px;counter-increment:s}
+  ol.steps li:last-child{padding-bottom:0}
+  ol.steps li::before{content:counter(s);position:absolute;left:0;top:0;
+       width:24px;height:24px;border-radius:50%;display:grid;place-items:center;
+       background:linear-gradient(180deg,var(--gold),var(--gold2));color:var(--dark);
+       font-size:13px;font-weight:800}
+  ol.steps li::after{content:"";position:absolute;left:11.5px;top:26px;bottom:4px;width:1px;background:var(--line)}
+  ol.steps li:last-child::after{display:none}
+  ol.steps b{color:var(--txt);font-weight:700}
+  ol.steps p{margin:2px 0 0;color:var(--txt2);font-size:13px}
+  .kbd{display:inline-flex;align-items:center;gap:3px;background:var(--card2);border:1px solid var(--line);
+       border-radius:6px;padding:1px 6px;font-size:13px;color:var(--gold);font-weight:600;white-space:nowrap}
+
+  /* ── 微信提示 ── */
+  #wx{display:none;position:fixed;inset:0;z-index:99;background:rgba(8,5,20,.92);
+      backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);padding:18px}
+  #wx.on{display:block}
+  #wx .arrow{position:absolute;top:8px;right:16px;font-size:44px;color:var(--gold);
+      animation:bob 1.1s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+  #wx .box{max-width:340px;margin:96px auto 0;background:var(--card);border:1px solid var(--line-gold);
+      border-radius:16px;padding:20px;text-align:center}
+  #wx .box h3{margin:0 0 10px;font-size:18px;color:var(--gold)}
+  #wx .box p{margin:0 0 6px;color:var(--txt2);font-size:14px}
+  #wx .box .big{color:var(--txt);font-size:15px;font-weight:700;margin:12px 0 4px}
+
+  /* ── 二维码 ── */
+  .qr{text-align:center}
+  .qr img{width:190px;height:190px;border-radius:12px;background:#fff;padding:8px;display:block;margin:4px auto 10px}
+
+  /* ── 警示框（非 Safari 时提示）── */
+  .tipbox{display:none;margin-top:14px;padding:12px 14px;border-radius:12px;
+     background:rgba(251,191,36,.12);border:1px solid var(--line-gold);
+     color:var(--txt2);font-size:13px;line-height:1.7}
+  .tipbox.on{display:block}
+  .tipbox b{color:var(--gold)}
+
+  /* ── FAQ ── */
+  details{border-top:1px solid var(--line);padding:12px 0 2px}
+  details:first-of-type{border-top:0}
+  summary{cursor:pointer;font-size:14.5px;font-weight:600;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::after{content:"＋";float:right;color:var(--txt3);font-weight:400}
+  details[open] summary::after{content:"－"}
+  details p{margin:8px 0 10px;color:var(--txt2);font-size:13.5px}
+  .ok{color:var(--green)}
+  footer{text-align:center;color:var(--txt3);font-size:11.5px;padding:22px 0 0;line-height:1.9}
+  .hidden{display:none !important}
+</style>
+</head>
+<body>
+
+<!-- 微信内打开时的引导层：微信会拦截 apk 下载，必须先跳浏览器 -->
+<div id="wx" role="dialog" aria-label="请在浏览器中打开">
+  <div class="arrow">↗</div>
+  <div class="box">
+    <h3 id="wx-title">请先在浏览器中打开</h3>
+    <p id="wx-why">微信里不能直接下载安装包</p>
+    <div class="big">点右上角 <span class="kbd">···</span></div>
+    <p>再选 <b style="color:var(--gold)">在浏览器打开</b><span id="wx-alt"> / <b style="color:var(--gold)">在默认浏览器中打开</b></span></p>
+    <button class="btn btn-ghost" style="margin-top:16px" id="wx-copy">复制网址</button>
+    <button class="btn btn-ghost" id="wx-close">我知道了，先看教程</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <header>
+    <img src="/download/logo.png" alt="梅州五华天王扑克" />
+    <h1>梅州五华天王扑克</h1>
+    <p class="sub">自动横屏 · 全屏免设置 · 一键分享给好友</p>
+  </header>
+
+  <!-- 安卓 -->
+  <section class="card" id="card-android">
+    <h2>安卓手机 <span class="tag">推荐</span></h2>
+    <p class="lead">装好就是全屏横屏，不用再自己调浏览器。</p>
+    <a class="btn btn-primary" id="apk" href="/download/wuhuatianwang.apk" download>⬇ 下载安卓App</a>
+    <p class="meta" id="apk-meta">安装时若提示「未知来源」，选择允许即可</p>
+  </section>
+
+  <!-- iPhone -->
+  <section class="card" id="card-ios">
+    <h2>iPhone / iPad</h2>
+    <p class="lead">苹果不能装安装包，但「加到主屏幕」后一样是全屏横屏，体验基本一致。</p>
+    <ol class="steps">
+      <li><b>确认你正在用 Safari</b>
+        <p>只有 Safari 能加到主屏幕。微信 / QQ / 抖音里打开都不行，
+           也<b>不能用夸克、UC、Chrome</b> —— 它们没有这个功能。
+           在微信里就点右上角 <span class="kbd">···</span> → <b>在浏览器打开</b>。</p></li>
+      <li><b>找到分享按钮</b> <span class="kbd">↑</span>
+        <p>一个「方框 + 向上箭头」的图标。不同机型位置不一样，按顺序找：
+           <br />· 竖屏一般在<b>屏幕最下方中间</b>
+           <br />· 横屏、或 iPad 上在<b>右上角</b>
+           <br />· iOS 18 及更新的版本，若底部只有一条细地址栏，
+             先点一下地址栏右侧的 <span class="kbd">···</span> 或先向下轻扫让工具栏出现</p></li>
+      <li><b>下滑找「添加到主屏幕」</b>
+        <p>弹出面板里<b>要往下滑</b>才能看到（前面一排是微信、拷贝等）。
+           中文系统显示 <span class="kbd">＋ 添加到主屏幕</span>，
+           英文系统是 <span class="kbd">Add to Home Screen</span>。
+           <br /><b>找不到？</b>把面板滑到最底部点 <span class="kbd">编辑操作…</span>，
+           在列表里把「添加到主屏幕」打开即可。</p></li>
+      <li><b>点右上角「添加」</b>
+        <p>会让你确认名字（默认「天王扑克」），直接点 <span class="kbd">添加</span>。</p></li>
+      <li><b>必须从桌面新图标进入</b>
+        <p>回到桌面，点<b>刚出现的天王扑克图标</b> —— 这样才没有地址栏、是真全屏。
+           继续从 Safari 里打开则一直有地址栏，等于没装。</p></li>
+      <li><b>关掉「竖屏方向锁定」</b>
+        <p>从<b>右上角往下滑</b>（旧机型是从底部往上滑）打开控制中心，
+           找到带小锁的 <span class="kbd">🔒</span> 图标，点成<b>灰色</b>即关闭。
+           然后手机横过来就会自动横屏。</p></li>
+    </ol>
+    <div class="tipbox" id="ios-warn">
+      <b>提示：</b>你现在不是用 Safari 打开的，按上面的步骤会找不到「添加到主屏幕」。
+      请先复制网址到 Safari 打开。
+      <button class="btn btn-ghost" style="margin-top:10px" id="ios-copy">复制网址</button>
+    </div>
+    <a class="btn btn-ghost" style="margin-top:16px" href="/">先用浏览器直接试玩 →</a>
+  </section>
+
+  <!-- 二维码 -->
+  <section class="card qr">
+    <h2 style="justify-content:center">发给好友</h2>
+    <p class="lead">让好友扫这个码，就能到这一页下载</p>
+    <img src="/download/qr-download.png" alt="扫码打开下载页" />
+    <button class="btn btn-ghost" id="copy">复制下载页网址</button>
+    <button class="btn btn-ghost hidden" id="share">分享给好友</button>
+    <p class="meta">网址：tianwang.geju8.cn/download</p>
+  </section>
+
+  <!-- 常见问题 -->
+  <section class="card">
+    <h2>常见问题</h2>
+    <details>
+      <summary>点了下载没反应 / 被拦住了</summary>
+      <p>基本都是因为在微信、QQ 里打开的 —— 它们不允许下载安装包。点右上角「···」→「在浏览器打开」，再点下载就正常了。</p>
+    </details>
+    <details>
+      <summary>安卓提示「未知来源」「可能有风险」</summary>
+      <p>这是安卓对所有非应用商店安装包的统一提示，不是病毒。按提示点「继续安装」/「允许此来源」即可。华为/小米可能还要在弹窗里点一次「继续安装」。</p>
+    </details>
+    <details>
+      <summary>装了App还要设置横屏全屏吗？</summary>
+      <p><span class="ok">不用。</span>安卓App打开就是强制横屏 + 隐藏状态栏的全屏，什么都不用调。</p>
+    </details>
+    <details>
+      <summary>苹果为什么没有安装包？</summary>
+      <p>苹果只允许从 App Store 装应用。按上面 5 步加到主屏幕，是目前 iPhone 上最接近App的玩法：有图标、全屏、可横屏。</p>
+    </details>
+    <details>
+      <summary>App里怎么分享给微信好友？</summary>
+      <p>在游戏里点「分享」，会直接弹出手机的系统分享面板，选微信就能挑好友发送。</p>
+    </details>
+  </section>
+
+  <footer>
+    梅州五华天王扑克 · 仅供娱乐，不提供任何形式的赌博<br />
+    tianwang.geju8.cn
+  </footer>
+</div>
+
+<script>
+(function () {
+  var ua = navigator.userAgent || '';
+  var isWx = /micromessenger/i.test(ua);
+  var isQQ = /\bQQ\/|QQBrowser/i.test(ua);
+  var isIOS = /iPhone|iPad|iPod/i.test(ua) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var isAndroid = /Android|HarmonyOS/i.test(ua);
+  var PAGE = 'https://tianwang.geju8.cn/download';
+
+  /* 按机型调整卡片顺序：苹果用户先看到自己那张，安卓用户先看到下载按钮 */
+  var wrap = document.querySelector('.wrap');
+  var ca = document.getElementById('card-android');
+  var ci = document.getElementById('card-ios');
+  if (isIOS) {
+    ci.classList.add('hi');
+    wrap.insertBefore(ci, ca);
+    ca.querySelector('.lead').textContent = '（这台设备是苹果，安卓包给安卓手机的好友用）';
+  } else if (isAndroid) {
+    ca.classList.add('hi');
+  } else {
+    ca.classList.add('hi');
+  }
+
+  /* ===== iOS 上是否真的在 Safari 里 =====
+     只有 Safari 有「添加到主屏幕」。iOS 上的 Chrome/Edge/Firefox/夸克/UC
+     虽然内核都是 WebKit，但各自的 UA 里带自己的标识，且都没有这个功能
+     （Chrome=CriOS, Edge=EdgiOS, Firefox=FxiOS, 夸克=Quark, UC=UCBrowser）。
+     不先点明这一点，用户会照着教程在夸克里翻半天也找不到入口。 */
+  var iosOtherBrowser = /CriOS|EdgiOS|FxiOS|OPiOS|mercury|Quark|UCBrowser|Baidu|SogouMobileBrowser|MQQBrowser|QQBrowser|HuaweiBrowser|MiuiBrowser/i.test(ua);
+  var isRealSafari = isIOS && !iosOtherBrowser && !isWx && !isQQ;
+  if (isIOS && !isRealSafari) {
+    var warn = document.getElementById('ios-warn');
+    if (warn) warn.classList.add('on');
+  }
+
+  /* 微信/QQ 内一律先弹引导：
+     安卓是因为微信直接拦掉 apk 下载；
+     苹果是因为微信浏览器没有 Safari 的「添加到主屏幕」，留在微信里怎么教都做不到全屏。 */
+  if (isWx || isQQ) showWx();
+
+  function showWx() {
+    if (isIOS) {
+      /* 苹果用户不需要安装包，理由要换成「加不了桌面」，否则会以为自己也要下载 apk */
+      document.getElementById('wx-title').textContent = '请先用 Safari 打开';
+      document.getElementById('wx-why').textContent = '微信里没法全屏，也不能加到桌面';
+      document.getElementById('wx-alt').style.display = 'none';
+    }
+    document.getElementById('wx').classList.add('on');
+  }
+  document.getElementById('wx-close').onclick = function () {
+    document.getElementById('wx').classList.remove('on');
+  };
+
+  function copy(text, btn, doneText) {
+    var okMsg = doneText || '✓ 已复制，去浏览器粘贴打开';
+    var old = btn.textContent;
+    function done(ok) {
+      btn.textContent = ok ? okMsg : '复制失败，请长按网址手动复制';
+      setTimeout(function () { btn.textContent = old; }, 2200);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { done(true); }, function () { fallback(); });
+    } else { fallback(); }
+    function fallback() {
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = text; ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        var ok = document.execCommand('copy');
+        document.body.removeChild(ta); done(ok);
+      } catch (e) { done(false); }
+    }
+  }
+
+  document.getElementById('wx-copy').onclick = function () {
+    copy(PAGE, this, isIOS ? '✓ 已复制，去 Safari 粘贴打开' : '✓ 已复制，去浏览器粘贴打开');
+  };
+  document.getElementById('copy').onclick = function () { copy(PAGE, this, '✓ 已复制，去微信粘贴发给好友'); };
+  var iosCopyBtn = document.getElementById('ios-copy');
+  if (iosCopyBtn) iosCopyBtn.onclick = function () { copy(PAGE, this, '✓ 已复制，去 Safari 粘贴打开'); };
+
+  /* 支持系统分享面板的机器给一个「分享给好友」按钮（能直接选微信） */
+  if (typeof navigator.share === 'function') {
+    var sb = document.getElementById('share');
+    sb.classList.remove('hidden');
+    sb.onclick = function () {
+      navigator.share({
+        title: '梅州五华天王扑克',
+        text: '一起打五华天王！安卓可直接装App，苹果加到桌面就能全屏横屏玩：' + PAGE
+      }).catch(function () {});
+    };
+  }
+
+  /* 安装包大小/更新时间由上传脚本写入，取不到就保持默认文案 */
+  fetch('/download/apk-info.json', { cache: 'no-store' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (!d) return;
+      var bits = [];
+      if (d.version) bits.push('版本 ' + d.version);
+      if (d.sizeText) bits.push(d.sizeText);
+      if (d.updated) bits.push('更新于 ' + d.updated);
+      if (bits.length) {
+        document.getElementById('apk-meta').innerHTML =
+          bits.join(' · ') + '<br />安装时若提示「未知来源」，选择允许即可';
+      }
+    })
+    .catch(function () {});
+})();
+</script>
+</body>
+</html>

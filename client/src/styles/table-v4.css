@@ -1,0 +1,2738 @@
+/* ===== 五华天王扑克 · 牌桌 v4 =====
+ *
+ * 配色：与全站统一的「紫金国潮」（见 styles/tokens.css）。
+ * 这里原来是一套独立的墨绿毛毡 + 木质边框，和大厅/商城/排行的深紫金完全
+ * 两个世界，进牌桌像换了个产品。现在牌桌自己的语义色统统收进下面这组
+ * --tv4-* 变量，全部由 tokens 的紫金派生：
+ *   - 桌面呢面 = 深紫径向渐变（保留"毛毡"的质感，只换色相）
+ *   - 边框 / 强调 / 主按钮 = 金色
+ *   - 面板 / 胶囊 / 玻璃层 = 深紫半透
+ * 改配色只动这一组变量，不要再往下面的规则里写死色值。
+ */
+
+.tv4-table {
+  /* 呢面：深紫三段径向渐变。比页面背景更深一档，手牌与牌阵才压得住 */
+  --tv4-felt-1: #3A2A6B;
+  --tv4-felt-2: #2A1E52;
+  --tv4-felt-3: #1B1338;
+
+  /* 玻璃层：深紫半透，用于顶栏比分板 / 胶囊 / 花色条 */
+  --tv4-glass:        rgba(32, 24, 66, 0.62);
+  --tv4-glass-strong: rgba(26, 19, 54, 0.86);
+  --tv4-glass-hover:  rgba(44, 33, 88, 0.78);
+  /* 面板（菜单/记录/设置/聊天）：几乎不透，内容要绝对可读 */
+  --tv4-panel-bg:     rgba(30, 22, 62, 0.97);
+
+  /* 描边：金色是国潮质感的关键，浅色描边只做次级分隔 */
+  --tv4-line-gold:      rgba(251, 191, 36, 0.55);
+  --tv4-line-gold-soft: rgba(251, 191, 36, 0.30);
+  --tv4-line-soft:      rgba(255, 255, 255, 0.14);
+
+  /* 文字 */
+  --tv4-text:      #F5F3FF;
+  --tv4-text-gold: #FCD34D;
+  --tv4-text-mute: rgba(255, 255, 255, 0.78);
+  --tv4-text-dim:  rgba(255, 255, 255, 0.60);
+  /* 金色按钮上的深色字：纯黑太硬，用深紫保持国潮调子 */
+  --tv4-text-on-gold: #2E0F5C;
+}
+
+.tv4-table {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 42%,
+      var(--tv4-felt-1) 0%, var(--tv4-felt-2) 52%, var(--tv4-felt-3) 100%);
+  overflow: hidden;
+}
+.tv4-table::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255,255,255,0.06) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(0,0,0,0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+.tv4-table::after {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.05 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  opacity: 0.8;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* 金色描边（原来是木纹色，和全站紫金对不上）。
+   加一层内侧金色光晕，深紫呢面上才有"包边"的立体感。 */
+.tv4-frame {
+  position: absolute; inset: 0;
+  border: calc(10 * var(--u)) solid transparent;
+  border-image: linear-gradient(135deg, #FDE68A, #EAB308, #A16207, #EAB308, #FDE68A) 1;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 0 1px rgba(251, 191, 36, 0.35),
+    inset 0 0 calc(40 * var(--u)) rgba(0, 0, 0, 0.45);
+}
+
+/* ===== 顶部 HUD ===== */
+.tv4-topbar {
+  position: absolute; top: calc(12 * var(--u)); left: 0; right: 0;
+  display: flex; align-items: center;
+  /* 刘海安全区在**内容层**避让，牌桌背景仍铺满整屏。
+     不能靠 body padding 内收整桌 —— 那样两侧会露出 body 底色，
+     就是用户反馈的「游戏界面全屏不了，左右有黑边」。 */
+  padding-left: calc(24 * var(--u) + var(--safe-l, 0px));
+  padding-right: calc(24 * var(--u) + var(--safe-r, 0px));
+  z-index: 30;
+}
+
+.tv4-icon-btn {
+  width: calc(44 * var(--u)); height: calc(44 * var(--u));
+  border-radius: calc(12 * var(--u));
+  background: var(--tv4-glass);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--tv4-line-gold-soft);
+  color: var(--tv4-text);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.tv4-icon-btn:hover { background: var(--tv4-glass-hover); border-color: var(--tv4-line-gold); }
+
+.tv4-scoreboard {
+  display: flex; align-items: center;
+  margin-left: calc(24 * var(--u));
+  padding: calc(6 * var(--u)) calc(8 * var(--u));
+  background: var(--tv4-glass);
+  backdrop-filter: blur(12px);
+  border-radius: calc(12 * var(--u));
+  border: 1px solid var(--tv4-line-gold-soft);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.tv4-score-main {
+  display: flex; align-items: center; gap: calc(8 * var(--u));
+  padding: 0 calc(16 * var(--u));
+  border-right: 1px solid var(--tv4-line-soft);
+}
+.tv4-score-main .label { color: var(--tv4-text-gold); font-size: calc(18 * var(--ut)); font-weight: 700; }
+.tv4-score-main .suit  { color: var(--tv4-text); font-size: calc(26 * var(--u)); font-weight: 900; line-height: 1; }
+.tv4-score-catch {
+  display: flex; align-items: center; gap: calc(12 * var(--u));
+  padding: 0 calc(16 * var(--u));
+}
+.tv4-score-catch .label { color: var(--tv4-text-gold); font-size: calc(15 * var(--ut)); font-weight: 700; white-space: nowrap; }
+.tv4-score-catch .value { color: #FEF08A; font-size: calc(26 * var(--u)); font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; }
+/* 庄家杀分用偏红的色，和闲家抓分的金色区分开，扫一眼就知道谁在领先 */
+.tv4-score-banker { border-right: 1px solid var(--tv4-line-soft); }
+.tv4-score-banker .label { color: #FCA5A5; }
+.tv4-score-banker .value { color: #FECACA; }
+.tv4-score-label-compact { display: none; }
+/* 三段信息挤在顶栏，窄屏要能收紧间距而不是溢出 */
+.tv4-score-main, .tv4-score-catch { padding: 0 calc(10 * var(--u)); gap: calc(6 * var(--u)); }
+
+.tv4-topbar-right {
+  margin-left: auto;
+  display: flex; align-items: center; gap: calc(12 * var(--u));
+}
+
+/* ===== 玩家座次 ===== */
+.tv4-player {
+  position: absolute;
+  display: flex; flex-direction: column;
+  align-items: center;
+  z-index: 20;
+}
+.tv4-player.left  { left: calc(24 * var(--u)); top: 50%; transform: translateY(-50%); }
+.tv4-player.right { right: calc(24 * var(--u)); top: 50%; transform: translateY(-50%); }
+.tv4-player.top   { right: calc(220 * var(--u)); top: calc(64 * var(--u)); }
+
+.tv4-avatar {
+  width: calc(72 * var(--u)); height: calc(72 * var(--u));
+  border-radius: calc(12 * var(--u));
+  border: 3px solid rgba(255,255,255,0.85);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  background: linear-gradient(135deg, #FBCFE8, #F472B6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: calc(36 * var(--u));
+  overflow: hidden;
+}
+.tv4-player.top .tv4-avatar { width: calc(64 * var(--u)); height: calc(64 * var(--u)); font-size: calc(32 * var(--u)); }
+
+.tv4-pname {
+  margin-top: calc(6 * var(--u));
+  color: #fff;
+  font-size: calc(13 * var(--ut));
+  font-weight: 600;
+  max-width: calc(80 * var(--u));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tv4-rank {
+  margin-top: calc(4 * var(--u));
+  padding: 2px calc(10 * var(--u));
+  background: linear-gradient(180deg, #E11D48, #9F1239);
+  border: 1px solid #FB7185;
+  border-radius: calc(6 * var(--u));
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.tv4-rank.green { background: linear-gradient(180deg, #059669, #065F46); border-color: #34D399; }
+.tv4-rank.blue  { background: linear-gradient(180deg, #7C3AED, #4C1D95); border-color: #A78BFA; }
+
+.tv4-coins {
+  margin-top: calc(6 * var(--u));
+  padding: calc(4 * var(--u)) calc(12 * var(--u));
+  background: var(--tv4-glass-strong);
+  border-radius: calc(20 * var(--u));
+  border: 1px solid var(--tv4-line-gold-soft);
+  display: flex; align-items: center; gap: calc(6 * var(--u));
+}
+.tv4-coins .dot { color: #FBBF24; font-size: calc(12 * var(--ut)); }
+.tv4-coins .val { color: #FEF3C7; font-size: calc(13 * var(--ut)); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ===== 中央叫主区 ===== */
+.tv4-center {
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: flex-end;
+  gap: calc(16 * var(--u));
+  z-index: 10;
+}
+
+/* 叫主亮出来的那张主牌（如「叫♠7为主」的 ♠7）。
+ *
+ * ===== 为什么字号要用「卡片宽度的比例」而不是 --ut =====
+ * 卡片尺寸走 --u（几何单位），角标文字原来走 --ut（文字单位），
+ * 而这两个单位的缩放曲线**故意不一样**（见 tokens.css：--ut 更平缓、
+ * 下限更高，好让手机上的正文不至于缩到看不清）。
+ * 结果就是屏幕越小，卡片按 --u 缩得快、里面的字按 --ut 缩得慢，
+ * 字相对卡片越来越大，最后左上角的点数/花色直接糊到中央的大花色上
+ * —— 这就是用户看到的「叫主7出来的牌图形重叠」。
+ * 实测重叠面积：桌面 1280 宽已有 384px²，iPhone 横屏 844 宽仍有 206px²。
+ *
+ * 正确做法照抄普通扑克牌（styles/card.css 的 .card-rank/.card-center-suit）：
+ * 字号 = 卡片宽度 × 固定比例。这样无论卡片怎么缩，字与卡片的比例恒定，
+ * 任何屏幕尺寸下版式都一样，不可能再叠。
+ */
+.tv4-main-card {
+  /* 卡面宽度收成变量，供内部字号按比例取用 */
+  --tv4-mc-w: calc(70 * var(--u));
+  width: var(--tv4-mc-w); height: calc(100 * var(--u));
+  background: linear-gradient(180deg, #FFF, #F5F5F5);
+  border-radius: calc(8 * var(--u));
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  position: relative;
+  padding: calc(6 * var(--u));
+  display: flex; flex-direction: column;
+  /* align-items 必须是 flex-start：默认的 stretch 会让点数/花色这两个
+     block 撑满整张卡宽，角标的盒子横跨整个卡面，和居中的大花色必然相交。
+     收成「只占字宽」之后，角标才真的待在左上角。 */
+  align-items: flex-start;
+  /* 角标溢出时裁掉，避免字飘到卡片外面 */
+  overflow: hidden;
+}
+/* 左上角点数 + 花色竖排成一列，比例照抄手牌（.tv4-hc-rank/.tv4-hc-center，
+   那套比例实测各屏幕零重叠）。 */
+.tv4-main-card .mrank {
+  font-size: calc(var(--tv4-mc-w) * 0.24);
+  font-weight: 900; line-height: 1;
+}
+.tv4-main-card .msuit {
+  font-size: calc(var(--tv4-mc-w) * 0.22);
+  line-height: 1; margin-top: calc(1 * var(--u));
+}
+/* 中央大花色：略向右下偏，进一步和左上角标拉开距离 */
+.tv4-main-card .mc-suit {
+  position: absolute; top: 56%; left: 58%;
+  transform: translate(-50%, -50%);
+  font-size: calc(var(--tv4-mc-w) * 0.40);
+  font-weight: 900; line-height: 1;
+  opacity: 0.9;
+}
+
+.tv4-declare {
+  position: absolute;
+  bottom: calc(-24 * var(--u)); left: 50%;
+  transform: translateX(-50%);
+  font-size: calc(56 * var(--u)); font-weight: 900;
+  background: linear-gradient(180deg, #FEF08A 0%, #FACC15 50%, #CA8A04 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 4px;
+  white-space: nowrap;
+}
+
+
+/* ===== 气泡 ===== */
+.tv4-bubble {
+  position: absolute;
+  top: 30%; right: calc(120 * var(--u));
+  background: var(--tv4-glass-strong);
+  border: 1px solid var(--tv4-line-gold-soft);
+  border-radius: calc(14 * var(--u));
+  padding: calc(10 * var(--u)) calc(18 * var(--u));
+  box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+  z-index: 20;
+}
+.tv4-bubble::after {
+  content: '';
+  position: absolute; bottom: calc(-8 * var(--u)); left: 50%;
+  transform: translateX(-50%);
+  border-left: calc(8 * var(--u)) solid transparent;
+  border-right: calc(8 * var(--u)) solid transparent;
+  border-top: calc(10 * var(--u)) solid var(--tv4-glass-strong);
+}
+.tv4-bubble span { color: var(--tv4-text); font-size: calc(13 * var(--ut)); font-weight: 500; white-space: nowrap; }
+
+/* ===== 反主 + 不叫 ===== */
+.tv4-anti-wrap {
+  position: absolute;
+  top: 58%; left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex; align-items: center; gap: calc(24 * var(--u));
+  z-index: 30;
+}
+
+/* ============================================================
+   叫主 / 叫分弹窗（.tv4-call-dialog）
+   ------------------------------------------------------------
+   两个子阶段共用这一层外壳：[标题] -> [主体] -> [提示] -> [按钮行]。
+   旧实现的问题（别改回去）：
+   1. 标题是 position:absolute 的"横幅"，挂在容器外面 top:-20u —— 手机上
+      会盖住中央叫主牌，且容器高度算不进标题，两块内容互相压。
+   2. 按钮宽度写死，「确认叫分」在小屏被裁字。
+   现在标题在正常文档流里，按钮宽度由 .tv4-pass-btn 自适应，容器只管排版。
+   ============================================================ */
+.tv4-call-dialog {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(10 * var(--u));
+  padding: calc(14 * var(--u)) calc(26 * var(--u)) calc(16 * var(--u));
+  /* 加宽：原来弹窗宽度完全由内容撑，实测手机上只有 126~145px，
+     在 844px 宽的屏幕上又小又局促（用户反馈"太小，可以做宽点"）。
+     注意不能用 --u 写下限：手机上 --u 被 clamp 到 0.55px，
+     420*--u 只有 231px，等于没加宽。这里用视口百分比 + 绝对上限，
+     既保证体量，也不会在窄屏溢出。 */
+  width: min(78vw, 520px);
+  max-width: calc(100vw - 24 * var(--u));
+  background: var(--tv4-glass-strong);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--tv4-line-gold-soft);
+  border-radius: calc(18 * var(--u));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    0 calc(10 * var(--u)) calc(32 * var(--u)) rgba(0,0,0,0.48);
+}
+/* 标题行：标题胶囊 + 右侧倒计时。
+   叫主/叫分之前完全没有倒计时显示，玩家不知道还有多久会被系统代打
+   （服务端 15 秒就会自动"不叫"），这是用户反馈的"倒计时也没显示"。 */
+.tv4-call-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(10 * var(--u));
+  width: 100%;
+}
+/* 弹窗内的倒计时：数字 + 环形进度，秒数≤5 转红并脉动 */
+.tv4-call-timer {
+  position: relative;
+  flex-shrink: 0;
+  width: calc(38 * var(--u));
+  height: calc(38 * var(--u));
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.32);
+  border: calc(2 * var(--u)) solid var(--tv4-line-gold);
+  color: var(--tv4-text);
+  font-size: calc(17 * var(--ut));
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.tv4-call-timer.is-urgent {
+  border-color: #F87171;
+  color: #FCA5A5;
+  animation: tv4-timer-pulse 0.9s ease-in-out infinite;
+}
+/* 标题：金色胶囊，正常文档流（不再是绝对定位横幅） */
+.tv4-call-title {
+  padding: calc(3 * var(--u)) calc(16 * var(--u));
+  border-radius: calc(999 * var(--u));
+  background: linear-gradient(180deg, #FDE047, #EAB308);
+  border: 1px solid #FEF08A;
+  color: var(--tv4-text-on-gold);
+  font-size: calc(14 * var(--ut));
+  font-weight: 900;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+.tv4-call-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(8 * var(--u));
+  width: 100%;
+}
+/* 提示文案：可换行，长句子不再横向撑破弹窗（旧的 .tv4-anti-hint 是
+   absolute + nowrap，长文案会直接伸到屏幕外）。 */
+.tv4-call-hint {
+  /* 不再限 max-width：原来卡死在 280u（手机上只 154px），
+     而弹窗已经有 520px 宽，结果提示文案缩成细长一条、
+     左右各空 200px。现在跟着弹窗撑满，居中排版。 */
+  width: 100%;
+  color: var(--tv4-text-mute);
+  font-size: calc(13 * var(--ut));
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.45;
+}
+/* 按钮行：横排、居中、可换行。按钮自身不收缩（flex-shrink:0），
+   宽度不够时整行换行，而不是把按钮压窄导致文字溢出。 */
+.tv4-call-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: calc(10 * var(--u));
+  width: 100%;
+}
+.tv4-call-actions .tv4-pass-btn {
+  --tv4-btn-minw: calc(118 * var(--u));
+  --tv4-btn-h: calc(48 * var(--u));
+  --tv4-btn-fs: calc(19 * var(--ut));
+  /* 撑满：两个按钮均分整行，而不是缩在中间。
+     flex-basis 写 0 才能真均分（auto 会按文案长度分，
+     「不叫」比「叫 105 分」短，两个按钮就一大一小）。
+     min-width 仍由 --tv4-btn-minw 兑底，不够宽时整行换行不裁字。 */
+  flex: 1 1 0;
+}
+
+.tv4-anti-bar {
+  position: relative;
+  display: flex; align-items: center; justify-content: space-evenly;
+  flex-wrap: wrap;
+  gap: calc(10 * var(--u));
+  /* 撑满弹窗：原来四个花色按钮挤在 288px（手机 124px）的一小坨里，
+     外面的 520px 弹窗两侧各空白 116~198px。现在花色按钮均匀
+     铺满整行，每个的点击间距也拉开了，手机上不容易按错。 */
+  width: 100%;
+  box-sizing: border-box;
+  padding: calc(8 * var(--u)) calc(12 * var(--u));
+  background: var(--tv4-glass-strong);
+  backdrop-filter: blur(10px);
+  border-radius: calc(50 * var(--u));
+  border: 1px solid var(--tv4-line-gold-soft);
+  box-shadow: inset 0 1px 2px rgba(255,255,255,0.12), 0 4px 16px rgba(0,0,0,0.3);
+}
+/* 花色按钮：白牌面 + 「符号 / 花色名」两行。
+   原来是深色玻璃底上放一个红/白符号，♠ 和 ♣ 在 22px 下几乎一样；
+   现在用真实牌面的白底 + 四色花色 + 中文名，认错的可能性降到零。 */
+.tv4-anti-btn {
+  width: calc(58 * var(--u)); height: calc(60 * var(--u));
+  border-radius: calc(10 * var(--u));
+  background: linear-gradient(180deg, #FFFFFF 0%, #F2F0F7 100%);
+  border: 1px solid rgba(46, 15, 92, 0.18);
+  box-shadow: 0 calc(2 * var(--u)) calc(6 * var(--u)) rgba(0,0,0,0.3);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: calc(1 * var(--u));
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.tv4-anti-btn:hover:not(:disabled) {
+  transform: translateY(calc(-3 * var(--u)));
+  box-shadow: 0 calc(6 * var(--u)) calc(14 * var(--u)) rgba(0,0,0,0.4);
+}
+.tv4-anti-suit { font-size: calc(26 * var(--u)); font-weight: 900; line-height: 1; }
+.tv4-anti-name {
+  font-size: 11px; font-weight: 800; line-height: 1;
+  color: #4B5563; letter-spacing: 0;
+}
+/* 两色回落（四色牌关掉时）：tv4-s-* 的四色规则优先级更高，会覆盖这里 */
+.tv4-anti-btn.red .tv4-anti-suit { color: #D92D20; }
+.tv4-anti-btn.black .tv4-anti-suit { color: #1A1A1A; }
+
+
+/* ============================================================
+   主按钮（确认叫分 / 不叫 / 出牌 / 准备 …）
+   ------------------------------------------------------------
+   配色：金色渐变 + 深紫字，和全站 --grad-button 同一套。
+   防溢出（这是原来「有的按钮文字溢出」的根因，改动时别退回去）：
+     旧写法 = width:140u 写死 + letter-spacing:4px + font-size:26u。
+     「确认叫分」四个字就要 4×26 + 4×4 = 120px，已经贴着 140 的边；
+     手机上 --u 被 clamp 到 0.55 下限后，字号缩得比宽度慢，文字直接顶出去。
+   新写法 = 不写死宽度：min-width 兜下限、padding 决定左右留白、
+     内容用 nowrap 单行、字距压到 1px，按钮永远比文字宽。
+   需要更宽的按钮请调 --tv4-btn-minw，不要再写 width。
+   ============================================================ */
+.tv4-pass-btn {
+  --tv4-btn-minw: calc(140 * var(--u));
+  --tv4-btn-h: calc(56 * var(--u));
+  --tv4-btn-fs: calc(24 * var(--u));
+  min-width: var(--tv4-btn-minw);
+  height: var(--tv4-btn-h);
+  padding: 0 calc(18 * var(--u));
+  background: var(--grad-button, linear-gradient(180deg, #FEF08A 0%, #FACC15 25%, #F0BC0C 58%, #DFA808 85%, #C99106 100%));
+  border-radius: calc(16 * var(--u));
+  border: calc(2 * var(--u)) solid #FDE68A;
+  box-shadow:
+    inset 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(255,255,255,0.55),
+    inset 0 calc(-2 * var(--u)) calc(4 * var(--u)) rgba(0,0,0,0.18),
+    0 calc(6 * var(--u)) calc(20 * var(--u)) rgba(202, 138, 4, 0.45);
+  color: var(--tv4-text-on-gold);
+  font-size: var(--tv4-btn-fs);
+  font-weight: 900;
+  letter-spacing: 1px;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  /* 文案一律单行，宽度不够就由 min-width/padding 撑开按钮，绝不折行或裁切 */
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.35);
+  transition: filter 0.15s, transform 0.12s;
+}
+.tv4-pass-btn:hover { filter: brightness(1.06); }
+.tv4-pass-btn:active { transform: scale(0.97); }
+
+/* ===== 中央背景文字 ===== */
+.tv4-bg-text {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.2;
+  z-index: 0;
+}
+.tv4-bg-text .l1 { color: #fff; font-size: calc(48 * var(--u)); font-weight: 900; letter-spacing: 0.2em; }
+.tv4-bg-text .l2 { color: #fff; font-size: calc(42 * var(--u)); font-weight: 900; letter-spacing: 0.3em; margin-top: calc(8 * var(--u)); }
+.tv4-bg-text .l3 { color: #fff; font-size: calc(28 * var(--u)); font-weight: 700; letter-spacing: 0.4em; margin-top: calc(8 * var(--u)); }
+
+/* ===== 底部手牌 =====
+ * 之前同点同花色是「上下叠」，只露 24px：第二张往后看不清、也几乎点不准，
+ * 手机横屏尤其难受，选对子/拖拉机全靠运气。现在每张牌单独占一格平铺。
+ *
+ * 唯一的溢出风险是横向：牌数由玩法决定（2副最多 36 张，3副 48 张），
+ * 所以步进按实际可用宽度反算：
+ *   步进 = min(理想步进, (可用宽 - 一张牌宽) / (张数 - 1))
+ * 牌越多挨得越紧（最紧时只露出左边一条，但点击热区仍是整格），永远不出界。
+ * --tv4-cards 由 TableV4 传入总张数。
+ */
+.tv4-hand-wrap {
+  position: absolute;
+  bottom: calc(66 * var(--u)); left: 0; right: 0;
+  z-index: 20;
+}
+.tv4-hand-row {
+  /* 牌面尺寸：64x98 -> 78x116。
+     旧尺寸下角标只有 14px 点数 + 12px 花色，手机上「一堆小符号」根本看不清
+     是什么牌。放大约 20% 后，点数/花色都能顶到可读字号，牌桌观感也更接近
+     升级/掼蛋类产品（它们的手牌通常占屏高的 28~32%，旧值只有 ~24%）。 */
+  --tv4-cw: calc(78 * var(--u));
+  --tv4-ch: calc(116 * var(--u));
+  /* --tv4-step 里带 100%，百分比是在【使用它的元素】上解析的：在槽位上
+     100% = 行宽（正确），但同一个变量用到卡面内部时 100% 变成卡片宽 40px，
+     算出来只有 8px —— 花色角标按这个宽度居中就会溢到隔壁牌下面被压掉，
+     看起来就是「花色挤成一团」。所以再给一份纯 vw 版本（手牌行本身就是
+     left:0/right:0 铺满视口，行宽 == 100vw），任何层级取值都一致。 */
+  /* --tv4-fit：这一行真正能给每张牌分到的露出宽度（硬上限，超了就出界）。
+     = (视口宽 - 一整张牌宽 - 左右余量 - 组间缝隙) / (张数 - 1) */
+  --tv4-fit: calc(
+    (100vw - var(--tv4-cw) - calc(16 * var(--u)) - calc(var(--tv4-gaps, 0) * 7 * var(--u)))
+    / max(1, calc(var(--tv4-cards, 27) - 1))
+  );
+  /* 露出宽度 = 理想 42u，装不下就压缩；期望下限 22u（原 13u，两个花色会糊成
+     一团看不清）。但 22u 只是"希望"，不能是硬下限：48 张(三副牌) 遇上 667px
+     的小屏时 48×22 根本塞不进去，硬留下限就会把两头的牌顶到屏幕外点不到。
+     所以最外层再用 --tv4-fit 兜一次底 —— 先保证不出界，装得下才放大。 */
+  --tv4-strip: min(
+    var(--tv4-fit),
+    max(calc(22 * var(--u)), min(calc(42 * var(--u)), var(--tv4-fit)))
+  );
+  /* 槽位步进：和上面的 --tv4-strip 是同一个公式，只是用 100% 代替 100vw。
+     两者的数值必须始终保持一致，否则角标的居中宽度会算错、花色又被邻牌压住。 */
+  --tv4-fit-pc: calc(
+    (100% - var(--tv4-cw) - calc(16 * var(--u)) - calc(var(--tv4-gaps, 0) * 7 * var(--u)))
+    / max(1, calc(var(--tv4-cards, 27) - 1))
+  );
+  --tv4-step: min(
+    var(--tv4-fit-pc),
+    max(calc(22 * var(--u)), min(calc(42 * var(--u)), var(--tv4-fit-pc)))
+  );
+  position: relative;
+  /* 牌高 116 + 选中抬起 26 + 余量：不够的话抬起来的牌会被裁掉顶部 */
+  height: calc(170 * var(--u));
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  /* 拖动刷选时不要选中文字、不要触发浏览器手势 */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.tv4-hand-row.is-marquee { cursor: crosshair; }
+
+/* 槽位：只负责「这张牌占多宽」。最后一张要占满整张牌宽，
+   否则末尾那张会被裁掉一截。卡片本体在槽位里绝对定位、不参与 flex 计算。 */
+.tv4-hand-slot {
+  position: relative;
+  flex: 0 0 auto;
+  width: var(--tv4-step);
+  /* 高度只到牌高（不是 100%）：行高比牌高多出的那一截要留给框选，
+     否则槽位铺满整行，起手点哪都落在牌上，永远进不了矩形框选模式。
+     +30u 是给「选中态抬起 26u」留的余量，抬起后仍在槽位内。 */
+  height: calc(var(--tv4-ch) + 30 * var(--u));
+  cursor: pointer;
+  /* 槽位是唯一的点击目标；卡面透传，避免邻牌把点击截走 */
+  pointer-events: auto;
+}
+.tv4-hand-slot.is-last { width: var(--tv4-cw); }
+/* 卡面纯展示，不参与命中测试 */
+.tv4-hand-card--flat { pointer-events: none; }
+
+/* 每一组（同点同花色）的第一张前面多留一点缝，
+   一眼能看出「这里连着几张一样的」，代替原来的上下叠放语义 */
+.tv4-hand-slot.is-group-start { margin-left: calc(7 * var(--u)); }
+
+.tv4-hand-card--flat {
+  position: absolute;
+  left: 0; bottom: 0;
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+/* 行内空白（手牌上方那条）是框选起手区，鼠标提示成十字 */
+.tv4-hand-row { cursor: default; }
+
+/* 悬停抬升（桌面）。手机没有 hover，靠选中态反馈 */
+@media (hover: hover) {
+  .tv4-hand-slot:hover { z-index: 400 !important; }
+  /* hover 挂在槽位上，抬起里面的卡面（卡面自身 pointer-events:none） */
+  .tv4-hand-slot:hover > .tv4-hand-card--flat {
+    transform: translateY(calc(-14 * var(--u)));
+    box-shadow: 0 calc(6 * var(--u)) calc(14 * var(--u)) rgba(0,0,0,0.35);
+  }
+}
+
+/* 选中态：抬高 + 金边，和 hover 拉开差距，多选时一眼看清选了哪些 */
+.tv4-hand-card--flat.is-selected {
+  transform: translateY(calc(-26 * var(--u)));
+  box-shadow:
+    0 0 0 calc(2 * var(--u)) #FACC15,
+    0 calc(8 * var(--u)) calc(16 * var(--u)) rgba(0,0,0,0.4);
+}
+/* 提示推荐：黄色虚边，和选中态可叠加 */
+.tv4-hand-card--flat.is-hint {
+  outline: calc(2 * var(--u)) dashed #FDE047;
+  outline-offset: calc(1 * var(--u));
+}
+
+/* 框选矩形 */
+.tv4-marquee {
+  position: absolute;
+  border: calc(2 * var(--u)) solid #FACC15;
+  background: rgba(250, 204, 21, 0.16);
+  border-radius: calc(4 * var(--u));
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* 选牌工具条：多选之后要能一键清空，不然只能一张张点回去。
+ * 必须放在手牌【上方】：放下方（bottom 负值）会落进 .tv4-bottombar 的
+ * 覆盖范围，底栏 z-index 更高，按钮看得见却点不动（实测被 intercept）。 */
+.tv4-sel-bar {
+  position: absolute;
+  left: 50%; top: calc(-6 * var(--u));
+  transform: translateX(-50%);
+  display: flex; align-items: center; gap: calc(10 * var(--u));
+  padding: calc(4 * var(--u)) calc(10 * var(--u));
+  border-radius: calc(999 * var(--u));
+  background: rgba(8, 34, 27, 0.82);
+  border: 1px solid rgba(255, 215, 90, 0.35);
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+  z-index: 40;
+}
+.tv4-sel-count {
+  color: #FDE68A;
+  font-size: calc(13 * var(--ut));
+  font-weight: 700;
+}
+.tv4-sel-clear {
+  padding: calc(3 * var(--u)) calc(10 * var(--u));
+  border-radius: calc(999 * var(--u));
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.22);
+  color: rgba(255,255,255,0.92);
+  font-size: calc(12 * var(--ut));
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.tv4-sel-clear:hover { background: rgba(255,255,255,0.22); }
+
+/* 牌型标签（在选牌条里，「已选 N 张」右边）。
+ * 灰底 = 认不出牌型（可能是甩牌、也可能不合规）；青底 = 是标准牌型。
+ * 两种状态除了颜色还差一个边框粗细，色弱玩家也能分辨。 */
+.tv4-pattern-tag {
+  padding: calc(2 * var(--u)) calc(9 * var(--u));
+  border-radius: calc(999 * var(--u));
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.20);
+  color: rgba(255,255,255,0.80);
+  font-size: calc(12 * var(--ut));
+  font-weight: 700;
+  white-space: nowrap;
+  font-family: "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+}
+.tv4-pattern-tag.is-named {
+  background: linear-gradient(180deg, rgba(8,145,178,0.92), rgba(14,116,144,0.92));
+  border: calc(1.5 * var(--u)) solid #67E8F9;
+  color: #ECFEFF;
+}
+
+.tv4-hand-card {
+  position: absolute;
+  left: 0; bottom: 0;
+  width: var(--tv4-cw, calc(78 * var(--u))); height: var(--tv4-ch, calc(116 * var(--u)));
+  border-radius: calc(7 * var(--u));
+  background: linear-gradient(180deg, #FFFFFF 0%, #F2F0F7 100%);
+  /* 深紫呢面上白牌需要一点描边和投影才"立"得起来 */
+  border: 1px solid rgba(46, 15, 92, 0.18);
+  box-shadow: 0 calc(2 * var(--u)) calc(6 * var(--u)) rgba(0,0,0,0.28);
+  cursor: pointer;
+  transition: transform 0.18s ease;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* 角标：点数在上、花色在下，各自独立一行。
+   原来两者行高都压到 1、间距 1px，14px 的点数和 12px 的花色几乎贴在一起，
+   小尺寸下看着就是"两个符号挤成一团"。现在把花色放大到和点数同级，
+   并留出真实的行间距。 */
+.tv4-hc-corner {
+  position: absolute; top: calc(3 * var(--u)); left: calc(4 * var(--u));
+  display: flex; flex-direction: column;
+  align-items: center;
+  line-height: 1;
+  gap: calc(2 * var(--u));
+}
+.tv4-hc-rank { font-size: calc(18 * var(--ut)); font-weight: 900; line-height: 1; }
+.tv4-hc-suit { font-size: calc(17 * var(--ut)); font-weight: 900; line-height: 1; }
+.tv4-hc-center {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  /* 34u 在 78px 宽的牌上会和左上/右下角标各压 3x9px（实测），
+     两个同色花色符号叠在一起看着就是"糊成一团"。
+     30u 是刚好和两处角标脱开的尺寸，仍然是牌面最大的那个符号。 */
+  font-size: calc(30 * var(--u)); font-weight: 900;
+  opacity: 0.9;
+}
+.tv4-hc-bcorner {
+  position: absolute; bottom: 2px; right: calc(3 * var(--u));
+  display: flex; flex-direction: column;
+  align-items: center; line-height: 1;
+  transform: rotate(180deg);
+}
+
+/* ===== 花色字形：强制文字形态，禁止彩色 emoji 接管 =====
+ * iOS/Safari 会优先用 Apple Color Emoji 渲染 ♠♥♦♣，而彩色 emoji 字形
+ * **完全无视 CSS color** —— 结果就是 iPhone 上花色变成彩色小图标、
+ * 四色牌设置失效，跟安卓 Chrome 完全不是一套牌面（用户实际反馈）。
+ *
+ * 两道防线：
+ *   1. JS 侧给符号追加 U+FE0E（见 utils/preferences.ts suitGlyph）；
+ *   2. 这里把字体栈显式钉死在文字字体上，且**不含**任何 emoji 字体，
+ *      让 emoji 字体连候选都进不来。
+ * 两道都做是因为单靠字体栈在部分 iOS 版本仍会回落到 emoji 字体。 */
+.tv4-hc-suit,
+.tv4-hc-center,
+.tv4-anti-suit,
+.tv4-scoreboard .suit,
+.tv4-main-card .msuit,
+.tv4-main-card .mc-suit {
+  font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  /* 万一环境支持，再显式声明一次文字形态 */
+  font-variant-emoji: text;
+}
+
+/* ===== 主牌标注 =====
+ * 玩家反馈「不知道哪些是主牌」。这游戏的主牌集合确实反直觉：
+ * 主花色整门 + **所有花色的 7 和 2** + 大小王，副花色的 7/2 长得像普通牌
+ * 但其实是主牌，新手打出去才发现被算成主。
+ *
+ * ===== 为什么只有小标签、不给整张牌染色 =====
+ * 第一版给主牌整张换了暖金底（想让主牌在手牌里连成一片、余光能估出有多少主），
+ * 但实机效果是「加了一层黄色」，一手 20+ 张主牌时半个屏幕发黄，
+ * 反而压掉了牌面本身的点数和花色（用户明确要求去掉）。
+ * 现在只保留左下角那个小标签 —— 信息一样全，但牌面保持干净的白底。
+ * 天王只把标签换成红底「王」，同样不动牌面底色。 */
+
+.tv4-hc-main-tag {
+  position: absolute;
+  left: calc(3 * var(--u));
+  bottom: calc(3 * var(--u));
+  z-index: 2;
+  min-width: calc(13 * var(--u));
+  padding: 0 calc(1 * var(--u));
+  border-radius: calc(3 * var(--u));
+  background: linear-gradient(180deg, #C98B26, #9A6320);
+  color: #FFFBF0;
+  font-size: calc(10 * var(--ut));
+  font-weight: 900;
+  /* line-height 用倍数而不是 calc(N * var(--u))：手机上 --u 被 clamp 到 0.55px
+     而 --ut 到 0.88px，写 calc(14*u)=7.7px 的行盒装不下 calc(10*ut)=8.8px 的字，
+     字会被行盒压掉下半截。倍数跟着字号走，永远装得下。 */
+  line-height: 1.25;
+  padding-top: calc(1 * var(--u));
+  padding-bottom: calc(1 * var(--u));
+  text-align: center;
+  /* 中文标签绝不能落到花色那套 emoji 字体栈上，这里显式给中文字体 */
+  font-family: "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+  pointer-events: none;
+}
+.tv4-hc-main-tag.is-tianwang {
+  background: linear-gradient(180deg, #DC2626, #991B1B);
+  border: 1px solid #FCD34D;
+  color: #FEF3C7;
+}
+
+.tv4-red   { color: #D92D20; }
+.tv4-black { color: #1A1A1A; }
+
+/* ===== 四色牌 =====
+ * 手机横屏一手 24~48 张，单张只露出 ~15px 宽的角标；这个尺寸下 ♠ 和 ♣ 的
+ * 轮廓差别不到一个像素网格，只靠红/黑两色会看错花色。四色牌用颜色代替形状：
+ *   黑桃=黑  红桃=红  梅花=绿  方块=蓝
+ * 只给花色符号上色，点数仍保持红/黑（保留「这张是红牌还是黑牌」的直觉）。
+ * data-four-color=off 时整段不生效，回落到传统两色。 */
+.tv4-table[data-four-color="on"] .tv4-s-spade    { color: #111827; }
+.tv4-table[data-four-color="on"] .tv4-s-heart    { color: #D92D20; }
+.tv4-table[data-four-color="on"] .tv4-s-club     { color: #047857; }
+.tv4-table[data-four-color="on"] .tv4-s-diamond  { color: #1D4ED8; }
+
+/* ===== 底部信息栏 ===== */
+.tv4-bottombar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: calc(64 * var(--u));
+  background: linear-gradient(180deg, rgba(44, 33, 88, 0.95) 0%, rgba(22, 16, 46, 0.98) 100%);
+  border-top: calc(2 * var(--u)) solid var(--tv4-line-gold-soft);
+  backdrop-filter: blur(10px);
+  display: flex; align-items: center;
+  /* 同顶栏：内容层避让刘海，背景铺满整屏（不留黑边） */
+  padding-left: calc(24 * var(--u) + var(--safe-l, 0px));
+  padding-right: calc(24 * var(--u) + var(--safe-r, 0px));
+  z-index: 30;
+}
+
+.tv4-me {
+  display: flex; align-items: center; gap: calc(12 * var(--u));
+}
+.tv4-me-avatar {
+  width: calc(48 * var(--u)); height: calc(48 * var(--u));
+  margin-top: calc(-24 * var(--u));
+  border-radius: calc(12 * var(--u));
+  border: 3px solid rgba(255,255,255,0.85);
+  background: linear-gradient(135deg, #DDD6FE, #7C3AED);
+  display: flex; align-items: center; justify-content: center;
+  font-size: calc(24 * var(--u));
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.tv4-me-info { display: flex; flex-direction: column; }
+.tv4-me-name { color: #fff; font-size: calc(13 * var(--ut)); font-weight: 600; }
+.tv4-me-coins { display: flex; align-items: center; gap: calc(6 * var(--u)); margin-top: 2px; }
+.tv4-me-coins .dot { color: #FBBF24; font-size: 11px; }
+.tv4-me-coins .val { color: #FEF3C7; font-size: calc(13 * var(--ut)); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.tv4-bottom-center {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center;
+  gap: calc(24 * var(--u));
+}
+
+.tv4-action-btn {
+  display: flex; align-items: center; gap: calc(6 * var(--u));
+  padding: calc(6 * var(--u)) calc(16 * var(--u));
+  background: var(--tv4-glass);
+  border: 1px solid var(--tv4-line-gold-soft);
+  border-radius: calc(999 * var(--u));
+  color: var(--tv4-text-mute);
+  font-size: calc(13 * var(--ut)); font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: color 0.15s, background 0.15s;
+}
+.tv4-action-btn:hover { color: var(--tv4-text); background: var(--tv4-glass-hover); border-color: var(--tv4-line-gold); }
+
+.tv4-score-pill {
+  display: flex; align-items: center; gap: calc(8 * var(--u));
+}
+.tv4-score-pill .icon {
+  width: calc(32 * var(--u)); height: calc(32 * var(--u));
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: calc(13 * var(--ut)); font-weight: 900;
+  border: 1px solid;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.tv4-score-pill .icon.di {
+  background: linear-gradient(180deg, #FBBF24, #D97706);
+  color: #78350F;
+  border-color: #FDE68A;
+}
+.tv4-score-pill .icon.bei {
+  background: linear-gradient(180deg, #A78BFA, #6D28D9);
+  color: #fff;
+  border-color: #DDD6FE;
+}
+.tv4-score-pill .val {
+  font-size: calc(24 * var(--u)); font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.tv4-score-pill.di .val { color: #FEF08A; }
+.tv4-score-pill.bei .val { color: #DDD6FE; }
+
+/* ============================================================
+   按住说话（实时语音）
+   ------------------------------------------------------------
+   状态只有两个：待机（玻璃底 + 金描边）/ 说话中（金底 + 红点 + 呼吸光圈）。
+   说话中的反馈必须足够强 —— 麦克风开着这件事不能含糊，否则玩家会不知道
+   自己还在录音。touch-action:none 是必须的：不写的话手机上按住会被当成
+   页面滚动/长按选中手势，pointerup 收不到，麦克风就一直开着。
+   ============================================================ */
+.tv4-voice-btn {
+  display: flex; align-items: center;
+  gap: calc(6 * var(--u));
+  height: calc(40 * var(--u));
+  padding: 0 calc(14 * var(--u));
+  margin-right: calc(10 * var(--u));
+  border-radius: calc(999 * var(--u));
+  background: var(--tv4-glass);
+  border: 1px solid var(--tv4-line-gold-soft);
+  color: var(--tv4-text-mute);
+  font-size: calc(13 * var(--ut));
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  flex-shrink: 0;
+  /* 按住手势的前提：禁掉浏览器自己的滚动/长按/选中行为 */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.tv4-voice-btn:hover {
+  background: var(--tv4-glass-hover);
+  border-color: var(--tv4-line-gold);
+  color: var(--tv4-text);
+}
+/* 说话中：金底深字 + 呼吸光圈，一眼看出麦克风是开着的 */
+.tv4-voice-btn.is-talking {
+  background: var(--grad-button, linear-gradient(180deg, #FACC15, #CA8A04));
+  border-color: #FEF08A;
+  color: var(--tv4-text-on-gold);
+  animation: tv4-voice-pulse 1.1s ease-in-out infinite;
+}
+@keyframes tv4-voice-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.55); }
+  50%      { box-shadow: 0 0 0 calc(7 * var(--u)) rgba(250, 204, 21, 0); }
+}
+.tv4-voice-label { line-height: 1; }
+
+/* ===== 按住说话的音量反馈 =====
+ * 用户反馈「按住说话没反馈，没感觉，都不知道有没有在发送语音」。
+ * 原来只有：按钮变金色 + 一个 1.1s 的固定脉冲 + 「对方在听…」文字。
+ * 三者都证明不了"麦克风真的在收音" —— 而且手机端 .tv4-voice-label 是
+ * display:none（44px 圆钮放不下 4 个字），实际上手机上几乎什么都看不到。
+ *
+ * 现在加一条真实电平条：--lv 由 JS 每 60ms 用 AnalyserNode 的 RMS 值更新。
+ * 第 n 格的点亮阈值是 n/5，所以说话越大声亮的格子越多，不说话时全灭。
+ * 格子会跟着你的声音动 = 麦克风真的在工作，这是唯一可信的反馈。 */
+.tv4-voice-meter {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: calc(2 * var(--u));
+  height: calc(16 * var(--u));
+  flex-shrink: 0;
+}
+.tv4-voice-meter i {
+  width: calc(3 * var(--u));
+  min-width: 2px;
+  border-radius: calc(2 * var(--u));
+  background: rgba(0, 0, 0, 0.28);          /* 未点亮：金底上用半透明黑当"空槽" */
+  /* 每格高度按序号递增，形成信号强度那种阶梯造型 */
+  transition: height 0.06s linear, background 0.06s linear;
+}
+/* 阈值点亮：--lv 超过 n/5 时第 n 格变亮并升高。
+   用 calc + clamp 做纯 CSS 判断，避免为 5 个格子各传一个变量。
+   原理：(lv - 阈值) 乘一个大数再 clamp 到 0~1，得到一个 0/1 开关。 */
+.tv4-voice-meter i:nth-child(1) { --th: 0.04; height: 40%; }
+.tv4-voice-meter i:nth-child(2) { --th: 0.20; height: 55%; }
+.tv4-voice-meter i:nth-child(3) { --th: 0.40; height: 70%; }
+.tv4-voice-meter i:nth-child(4) { --th: 0.60; height: 85%; }
+.tv4-voice-meter i:nth-child(5) { --th: 0.80; height: 100%; }
+.tv4-voice-meter i {
+  --on: clamp(0, calc((var(--lv, 0) - var(--th)) * 100), 1);
+  background: rgba(0, 0, 0, calc(0.28 - 0.28 * var(--on)));
+  box-shadow: inset 0 0 0 calc(4 * var(--u)) rgba(255, 255, 255, calc(0.95 * var(--on)));
+}
+
+/* 窄屏（横屏手机）底栏放不下 4 个字，收成纯图标按钮。
+   ⚠ 这里的尺寸不能再缩：之前写 height:36u + padding:10u，
+   实测在 812x375 手机上算出来只有 34x22 px，手指根本按不准，
+   用户反馈"手机端语音用不了"。按住说话是长按手势，比普通点击更需要
+   足够的触摸面积，所以这里硬性保底 44x44（iOS 人机指南的最小可点尺寸）。 */
+@media (pointer: coarse), (max-height: 480px) {
+  .tv4-voice-btn {
+    width: max(44px, calc(44 * var(--u)));
+    height: max(44px, calc(44 * var(--u)));
+    padding: 0;
+    margin-right: calc(6 * var(--u));
+    justify-content: center;
+    border-radius: 50%;
+  }
+  .tv4-voice-label { display: none; }
+  /* 手机端按钮是 44x44 的圆，里面已经有麦克风图标，塞不进电平条。
+     改成浮在按钮正上方的一条独立指示器 —— 这是手机上唯一的可见反馈，
+     必须够大、够显眼，所以顺便把格子加宽加高。
+     position 基准是 .tv4-voice-btn（下面给它 relative）。 */
+  .tv4-voice-btn { position: relative; }
+  .tv4-voice-meter {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 6 * var(--u));
+    transform: translateX(-50%);
+    height: calc(22 * var(--u));
+    min-height: 18px;
+    padding: calc(3 * var(--u)) calc(6 * var(--u));
+    gap: calc(3 * var(--u));
+    border-radius: calc(6 * var(--u));
+    /* 深底 + 金框，浮在牌桌上要能压住任何背景 */
+    background: rgba(8, 34, 27, 0.92);
+    border: 1px solid rgba(250, 204, 21, 0.75);
+    box-shadow: 0 calc(2 * var(--u)) calc(8 * var(--u)) rgba(0,0,0,0.45);
+    z-index: 60;
+    pointer-events: none;
+  }
+  .tv4-voice-meter i {
+    width: calc(4 * var(--u));
+    min-width: 3px;
+    /* 深底上"空槽"要用半透明白，黑色在深底上看不见 */
+    background: rgba(255, 255, 255, 0.18);
+  }
+  .tv4-voice-meter i {
+    background: rgba(255, 255, 255, calc(0.18 + 0.77 * var(--on)));
+    box-shadow: none;
+  }
+}
+
+/* ===== 牌阵上的「先出」/「压」标签 =====
+   贴在牌组正上方，绝对定位不占布局高度 —— 牌阵四个方位的坐标是算好的，
+   标签一旦参与 flex 布局就会把牌顶下去、四方位对不齐。
+   父级 .tv4-trick-slot 是 position:absolute，这里直接以它为基准。 */
+.tv4-trick-tag {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 2 * var(--u));
+  transform: translateX(-50%);
+  white-space: nowrap;          /* 「先出」两个字绝不能换行 */
+  padding: 0 calc(5 * var(--u));
+  /* 行高用倍数，不能写 calc(N * var(--u))：手机上 --u 被 clamp 到 0.55px
+     而字号用的 --ut 是 0.88px，用 --u 算出来的行盒装不下字。 */
+  line-height: 1.5;
+  font-size: calc(10 * var(--ut));
+  font-weight: 800;
+  border-radius: calc(4 * var(--u));
+  /* 金色 = 定门的人（和座位上的「先出」标签同色，玩家一眼能对应起来） */
+  color: #422006;
+  background: linear-gradient(180deg, #FDE68A 0%, #F59E0B 100%);
+  border: 1px solid rgba(120, 53, 15, 0.5);
+  box-shadow: 0 calc(1 * var(--u)) calc(4 * var(--u)) rgba(0, 0, 0, 0.45);
+  z-index: 12;                  /* 压在牌面之上，但低于弹层 */
+  pointer-events: none;
+}
+/* 顶部三家（top / top-left / top-right）的标签必须朝下挂：
+   它们的牌组贴着牌阵容器上沿，标签朝上会伸出容器压进顶栏比分板。
+   朝下挂时下方就是行间空隙（三行各 94u，空档 328u，余量充足），不会压到别人。 */
+.tv4-trick-tag[data-tag-pos="below"] {
+  bottom: auto;
+  top: calc(100% + 2 * var(--u));
+}
+
+/* 「压」= 现在他的牌最大。用红色和金色区分开：
+   金 = 这门是他开的，红 = 这墩现在是他的。 */
+.tv4-trick-tag.is-winner {
+  color: #FEF2F2;
+  background: linear-gradient(180deg, #DC2626 0%, #991B1B 100%);
+  border-color: rgba(254, 202, 202, 0.55);
+}
+
+.tv4-trick-slot { cursor: zoom-in; }
+.tv4-trick-inspect {
+  position: fixed; inset: 0; z-index: 260;
+  display: flex; align-items: center; justify-content: center;
+  padding: calc(20 * var(--u));
+  background: rgba(2, 8, 18, 0.72);
+  backdrop-filter: blur(4px);
+}
+.tv4-trick-inspect-panel {
+  width: min(92vw, calc(720 * var(--u)));
+  max-height: 82vh; overflow: auto;
+  padding: calc(14 * var(--u));
+  border: 1px solid rgba(240, 200, 106, 0.55);
+  border-radius: calc(14 * var(--u));
+  background: linear-gradient(180deg, #18243a, #0c1424);
+  box-shadow: 0 calc(14 * var(--u)) calc(40 * var(--u)) rgba(0,0,0,.55);
+}
+.tv4-trick-inspect-head { display: flex; align-items: center; gap: calc(8 * var(--u)); color: #fff; }
+.tv4-trick-inspect-head span { color: #F8E7B2; font-size: calc(12 * var(--ut)); }
+.tv4-trick-inspect-head button { margin-left: auto; border: 0; background: none; color: #fff; font-size: calc(26 * var(--ut)); cursor: pointer; }
+.tv4-trick-inspect-cards { display: flex; flex-wrap: wrap; justify-content: center; gap: calc(7 * var(--u)); margin-top: calc(12 * var(--u)); }
+.tv4-trick-inspect-cards .tv4-hand-card { position: relative; flex: 0 0 auto; }
+
+/* 听筒开关：默认低调，关掉时变红，一眼看出"我现在听不到别人" */
+.tv4-voice-mute-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: calc(40 * var(--u));
+  height: calc(40 * var(--u));
+  margin-right: calc(10 * var(--u));
+  border-radius: 50%;
+  background: var(--tv4-glass);
+  border: 1px solid var(--tv4-line-gold-soft);
+  color: var(--tv4-text-mute);
+  cursor: pointer;
+  flex-shrink: 0;
+  backdrop-filter: blur(8px);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.tv4-voice-mute-btn:hover {
+  background: var(--tv4-glass-hover);
+  border-color: var(--tv4-line-gold);
+  color: var(--tv4-text);
+}
+.tv4-voice-mute-btn.is-off {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(248, 113, 113, 0.75);
+  color: #FCA5A5;
+}
+@media (pointer: coarse), (max-height: 480px) {
+  .tv4-voice-mute-btn {
+    width: max(44px, calc(44 * var(--u)));
+    height: max(44px, calc(44 * var(--u)));
+    margin-right: calc(6 * var(--u));
+  }
+}
+
+/* 座位上的「正在说话」声波：三条跳动的竖线 */
+.tv4-speaking {
+  display: flex; align-items: flex-end;
+  gap: calc(2 * var(--u));
+  height: calc(14 * var(--u));
+  margin-top: calc(4 * var(--u));
+  padding: calc(3 * var(--u)) calc(8 * var(--u));
+  border-radius: calc(999 * var(--u));
+  background: rgba(250, 204, 21, 0.18);
+  border: 1px solid var(--tv4-line-gold);
+  box-sizing: content-box;
+}
+.tv4-speaking i {
+  width: calc(3 * var(--u));
+  height: 100%;
+  border-radius: calc(2 * var(--u));
+  background: #FCD34D;
+  animation: tv4-wave 0.6s ease-in-out infinite;
+}
+.tv4-speaking i:nth-child(2) { animation-delay: 0.15s; }
+.tv4-speaking i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes tv4-wave {
+  0%, 100% { transform: scaleY(0.35); }
+  50%      { transform: scaleY(1); }
+}
+/* 说话的人头像描金边，扫一眼就知道声音来自谁 */
+.tv4-player.is-speaking .tv4-avatar {
+  border-color: #FCD34D;
+  box-shadow: 0 0 calc(14 * var(--u)) rgba(250, 204, 21, 0.65);
+}
+
+/* ===== 轮到谁出牌 =====
+ * 玩家反馈「出牌人提示不明显」：以前对手座位在等他操作时零变化。
+ * 三层提示叠加，任何一层被系统设置削弱（如 reduce-motion 关动画）都还剩别的：
+ *   1. 头像青色描边 + 外发光（和「正在说话」的金色区分开，两者可同时出现）
+ *   2. 呼吸光环（scale 脉冲，余光也能捕捉到）
+ *   3. 「思考中」文字标签（唯一不依赖颜色的一层，色弱玩家靠它）
+ */
+.tv4-player.is-turn .tv4-avatar {
+  border-color: #22D3EE;
+  box-shadow:
+    0 0 calc(18 * var(--u)) rgba(34, 211, 238, 0.85),
+    0 0 calc(34 * var(--u)) rgba(34, 211, 238, 0.4);
+}
+/* 说话优先级更高：正在说话时保持金边，不然刚说话的人边框会闪成青色 */
+.tv4-player.is-turn.is-speaking .tv4-avatar {
+  border-color: #FCD34D;
+  box-shadow:
+    0 0 calc(14 * var(--u)) rgba(250, 204, 21, 0.65),
+    0 0 calc(30 * var(--u)) rgba(34, 211, 238, 0.5);
+}
+/* 呼吸光环。用 ::after 而不是给头像加 animation —— 头像上已经有 transition，
+   叠 animation 会让 box-shadow 抖动。 */
+.tv4-player.is-turn .tv4-avatar::after {
+  content: '';
+  position: absolute;
+  inset: calc(-6 * var(--u));
+  border-radius: calc(16 * var(--u));
+  border: 2px solid rgba(34, 211, 238, 0.7);
+  animation: tv4-turn-pulse 1.4s ease-out infinite;
+  pointer-events: none;
+}
+/* 头像本身 overflow:hidden 会把光环裁掉，is-turn 时放开。
+   头像内容是 emoji 字符不是图片，放开 overflow 不会漏出内容。 */
+.tv4-player.is-turn .tv4-avatar { overflow: visible; position: relative; }
+
+@keyframes tv4-turn-pulse {
+  0%   { transform: scale(0.94); opacity: 0.9; }
+  70%  { transform: scale(1.16); opacity: 0; }
+  100% { transform: scale(1.16); opacity: 0; }
+}
+
+/* 「先出」标签：本墩由谁领出。
+ * 和「出牌中/跟牌中」用不同颜色（金 vs 青）且位置在它上面 ——
+ * 两者语义不同：金色的「先出」是"这墩是他定的门"（出完还留着），
+ * 青色的是"现在等他动作"（会跟着轮次移动）。
+ * 用金色是因为牌桌上金色已经代表"庄家/权威"，语义一致。 */
+.tv4-leader-tag {
+  margin-top: calc(4 * var(--u));
+  padding: calc(1 * var(--u)) calc(7 * var(--u));
+  border-radius: calc(7 * var(--u));
+  background: linear-gradient(180deg, rgba(202, 138, 4, 0.95), rgba(146, 100, 3, 0.95));
+  border: 1px solid #FDE68A;
+  color: #FEF9C3;
+  font-size: calc(10.5 * var(--ut));
+  font-weight: 800;
+  line-height: 1.3;
+  white-space: nowrap;
+  letter-spacing: calc(1 * var(--u));
+  box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+  font-family: "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+}
+
+.tv4-turn-tag {
+  margin-top: calc(4 * var(--u));
+  display: inline-flex; align-items: center; gap: calc(4 * var(--u));
+  padding: calc(2 * var(--u)) calc(8 * var(--u));
+  border-radius: calc(8 * var(--u));
+  background: linear-gradient(180deg, rgba(8, 145, 178, 0.95), rgba(14, 116, 144, 0.95));
+  border: 1px solid #67E8F9;
+  color: #ECFEFF;
+  font-size: calc(11 * var(--ut));
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+}
+.tv4-turn-dot {
+  width: calc(5 * var(--u)); height: calc(5 * var(--u));
+  border-radius: 50%;
+  background: #A5F3FC;
+  animation: tv4-turn-blink 1s ease-in-out infinite;
+}
+@keyframes tv4-turn-blink {
+  0%, 100% { opacity: 0.25; }
+  50%      { opacity: 1; }
+}
+
+/* 轮到自己：底栏自己那块也亮起来。
+   手机横屏下操作按钮偏右，玩家视线常在手牌上，只有按钮变可点根本察觉不到。 */
+.tv4-me.is-turn .tv4-me-avatar {
+  border-color: #22D3EE;
+  box-shadow:
+    0 0 calc(16 * var(--u)) rgba(34, 211, 238, 0.85),
+    0 4px 16px rgba(0,0,0,0.3);
+}
+.tv4-me.is-turn .tv4-me-name::after {
+  content: '该你出牌';
+  margin-left: calc(6 * var(--u));
+  padding: 0 calc(6 * var(--u));
+  border-radius: calc(6 * var(--u));
+  background: rgba(8, 145, 178, 0.9);
+  border: 1px solid #67E8F9;
+  color: #ECFEFF;
+  font-size: calc(10 * var(--ut));
+  font-weight: 700;
+}
+
+/* 无障碍：开了「减少动态效果」就不跳动，改成静态显示 */
+@media (prefers-reduced-motion: reduce) {
+  .tv4-voice-btn.is-talking { animation: none; }
+  .tv4-speaking i { animation: none; transform: scaleY(0.7); }
+  /* 关了动效也不能丢掉「轮到谁」这个信息：光环停在放大态常显，圆点常亮。 */
+  .tv4-player.is-turn .tv4-avatar::after { animation: none; transform: scale(1.06); opacity: 0.85; }
+  .tv4-turn-dot { animation: none; opacity: 1; }
+}
+
+.tv4-chat-btn {
+  width: calc(40 * var(--u)); height: calc(40 * var(--u));
+  border-radius: 50%;
+  background: var(--tv4-glass);
+  border: 1px solid var(--tv4-line-gold-soft);
+  color: var(--tv4-text-mute);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(8px);
+  transition: background 0.15s, border-color 0.15s;
+}
+.tv4-chat-btn:hover { background: var(--tv4-glass-hover); border-color: var(--tv4-line-gold); color: var(--tv4-text); }
+
+/* 浮动动画 */
+@keyframes tv4-float-up {
+  0% { transform: translateY(10px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.tv4-animate-float { animation: tv4-float-up 0.4s ease-out; }
+
+/* ===== 新增：5/6 人局座位方位 ===== */
+.tv4-player.top-left  { left: calc(190 * var(--u)); top: calc(52 * var(--u)); }
+.tv4-player.top-right { right: calc(190 * var(--u)); top: calc(52 * var(--u)); }
+
+/* 6 人局：top / top-left / top-right 三家同时在顶部，需重新分配水平空间，
+   否则 .tv4-player.top 的 right:220px 会与 top-right 的 right:190px 重叠。 */
+.tv4-table[data-players="6"] .tv4-player.top {
+  right: auto; left: 50%; transform: translateX(-50%); top: calc(40 * var(--u));
+}
+.tv4-table[data-players="6"] .tv4-player.top-left  { left: 26%; top: calc(60 * var(--u)); }
+.tv4-table[data-players="6"] .tv4-player.top-right { right: 26%; top: calc(60 * var(--u)); }
+.tv4-player.top-left .tv4-avatar,
+.tv4-player.top-right .tv4-avatar { width: calc(60 * var(--u)); height: calc(60 * var(--u)); font-size: calc(30 * var(--u)); }
+
+/* ===== 新增：按钮禁用态与次要按钮 ===== */
+.tv4-pass-btn:disabled,
+.tv4-anti-btn:disabled,
+.tv4-bid-step:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(0.6);
+}
+.tv4-pass-btn:disabled:active { transform: none; }
+.tv4-anti-btn:disabled:hover { transform: none; box-shadow: 0 calc(2 * var(--u)) calc(6 * var(--u)) rgba(0,0,0,0.3); }
+.tv4-pass-btn--ghost {
+  background: linear-gradient(180deg, rgba(78, 62, 138, 0.9) 0%, rgba(44, 34, 88, 0.94) 100%);
+  border-color: var(--tv4-line-gold-soft);
+  box-shadow: inset 0 1px 2px rgba(255,255,255,0.14), 0 4px 14px rgba(0,0,0,0.3);
+  letter-spacing: 1px;
+  /* 玻璃底必须配浅字（金按钮才是深紫字），否则深紫底深紫字看不见 */
+  color: var(--tv4-text);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+}
+
+/* 提示按钮上的「第几套 / 共几套」标记。
+   反复按提示会轮转不同打法，不给个数字玩家不知道"还能换"，
+   也不知道自己是不是绕回了第一套。
+
+   刻意做成**行内**元素而不是绝对定位的角标：
+   角标会伸出按钮边界去挤旁边的「出牌」（手机上两个按钮只隔 5px），
+   而且尺寸用 --u 写会被手机的 clamp 压到 8.8px，10px 的字直接溢出。
+   行内的话按钮自己变宽，flex 行会自动腾出空间，怎么缩都不会破版。 */
+.tv4-hint-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: max(3px, calc(4 * var(--u)));
+}
+.tv4-hint-cycle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 下限一律用绝对 px：--u 在手机上被 clamp 到 0.55，用它写下限等于没写 */
+  min-width: max(20px, calc(24 * var(--u)));
+  padding: 0 max(3px, calc(4 * var(--u)));
+  height: max(14px, calc(16 * var(--u)));
+  border-radius: 999px;
+  background: linear-gradient(180deg, #FACC15, #CA8A04);
+  color: var(--tv4-text-on-gold);
+  font-size: max(9px, calc(10 * var(--ut)));
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.35);
+  pointer-events: none;
+}
+
+/* ===== 叫分：加减器 + 滑杆 =====
+   外壳（背景/描边/标题/按钮行）统一由 .tv4-call-dialog 提供，
+   这里只管加减器和滑杆本身。 */
+.tv4-bid-stepper {
+  display: flex; align-items: center;
+  gap: calc(14 * var(--u));
+  /* 撑满弹窗：原来宽度只由内容撑（桌面 212px、手机只 99px），
+     放在 520px 的弹窗里左右各空 150~210px，就是用户说的
+     「左右空太多、内容挤中间」。现在 − / + 顶到两端，
+     读数占中间，点击热区也变大。 */
+  width: 100%;
+  justify-content: space-between;
+}
+.tv4-bid-step {
+  width: calc(44 * var(--u)); height: calc(44 * var(--u));
+  border-radius: calc(12 * var(--u));
+  background: rgba(255,255,255,0.10);
+  border: 1px solid var(--tv4-line-gold-soft);
+  color: var(--tv4-text-gold);
+  font-size: calc(26 * var(--u)); font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+.tv4-bid-step:hover:not(:disabled) { background: rgba(255,255,255,0.2); border-color: var(--tv4-line-gold); }
+/* 分数读数：等宽数字 + 固定下限宽，40->105 变化时按钮不会左右跳 */
+.tv4-bid-value {
+  display: flex; align-items: baseline; justify-content: center;
+  gap: calc(3 * var(--u));
+  min-width: calc(96 * var(--u));
+  /* 占满 − 与 + 之间的剩余空间，让读数真正居中 */
+  flex: 1 1 auto;
+}
+.tv4-bid-value strong {
+  color: var(--tv4-text-gold);
+  font-size: calc(38 * var(--u)); font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 calc(2 * var(--u)) calc(8 * var(--u)) rgba(0,0,0,0.5);
+}
+.tv4-bid-value span { color: var(--tv4-text-mute); font-size: calc(14 * var(--ut)); font-weight: 700; }
+.tv4-bid-range {
+  /* 弹窗已经给了下限宽，滑杆跟着撑满可用宽度，拖动手感更好。
+     不再写 max-width：340u 在手机上只 187px，滑杆会缩回弹窗中间。 */
+  width: 100%;
+  accent-color: #FACC15;
+  cursor: pointer;
+}
+.tv4-bid-range:disabled { cursor: not-allowed; opacity: 0.5; }
+
+/* ============================================================
+   扣底阶段：中央底牌区（支持分批扣牌）
+   ------------------------------------------------------------
+   庄家可以分几次把牌放进这里，凑够张数服务端自动结算；
+   放错了点这里的牌能取回。所以这一区必须是可交互的，
+   不是原来那个纯展示的占位框。
+   ============================================================ */
+.tv4-discard-zone {
+  position: absolute;
+  top: 42%; left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(10 * var(--u));
+  padding: calc(12 * var(--u)) calc(18 * var(--u));
+  max-width: calc(100vw - 32 * var(--u));
+  background: var(--tv4-glass-strong);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--tv4-line-gold-soft);
+  border-radius: calc(16 * var(--u));
+  box-shadow: 0 calc(8 * var(--u)) calc(26 * var(--u)) rgba(0,0,0,0.45);
+  z-index: 25;
+}
+.tv4-discard-title {
+  display: flex; align-items: center;
+  gap: calc(8 * var(--u));
+  color: var(--tv4-text);
+  font-size: calc(15 * var(--ut));
+  font-weight: 800;
+  white-space: nowrap;
+}
+/* 进度「6 / 12」：等宽数字，放牌时不会左右跳 */
+.tv4-discard-progress {
+  padding: calc(2 * var(--u)) calc(10 * var(--u));
+  border-radius: calc(999 * var(--u));
+  background: rgba(250, 204, 21, 0.16);
+  border: 1px solid var(--tv4-line-gold);
+  color: var(--tv4-text-gold);
+  font-variant-numeric: tabular-nums;
+  font-size: calc(14 * var(--ut));
+}
+.tv4-discard-need { color: var(--tv4-text-mute); font-weight: 600; font-size: calc(13 * var(--ut)); }
+.tv4-discard-ok   { color: #86EFAC; font-weight: 700; font-size: calc(13 * var(--ut)); }
+.tv4-discard-cards {
+  display: flex; align-items: center; justify-content: center;
+  min-height: calc(88 * var(--u));
+}
+/* 底牌区里的牌：可点击取回。用 button 保证键盘也能操作。 */
+.tv4-discard-card {
+  position: relative;
+  width: calc(60 * var(--u));
+  height: calc(88 * var(--u));
+  padding: 0;
+  cursor: pointer;
+  box-shadow: 0 calc(3 * var(--u)) calc(10 * var(--u)) rgba(0,0,0,0.35);
+  transition: transform 0.12s;
+}
+.tv4-discard-card:hover { transform: translateY(calc(-6 * var(--u))); z-index: 2; }
+.tv4-discard-empty {
+  color: var(--tv4-text-mute);
+  font-size: calc(13 * var(--ut));
+  padding: calc(30 * var(--u)) calc(12 * var(--u));
+  border: calc(2 * var(--u)) dashed rgba(255,255,255,0.28);
+  border-radius: calc(8 * var(--u));
+  white-space: nowrap;
+}
+.tv4-discard-clear {
+  height: calc(32 * var(--u));
+  padding: 0 calc(14 * var(--u));
+  border-radius: calc(999 * var(--u));
+  background: rgba(255,255,255,0.10);
+  border: 1px solid var(--tv4-line-gold-soft);
+  color: var(--tv4-text);
+  font-size: calc(13 * var(--ut));
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tv4-discard-clear:hover { background: rgba(255,255,255,0.18); border-color: var(--tv4-line-gold); }
+
+/* 底牌区下方的操作行：全部取回 + 确认埋底 */
+.tv4-discard-ops {
+  display: flex; align-items: center; justify-content: center;
+  gap: calc(8 * var(--u));
+  flex-wrap: wrap;
+}
+/* 「确认埋底」是这一阶段唯一的推进动作，必须比「全部取回」显眼一档：
+ * 实心金 vs 半透明白。以前凑够张数就自动开打，庄家来不及反应；
+ * 现在给了确认按钮，就要让人一眼看到该点哪个。 */
+.tv4-discard-confirm {
+  height: calc(34 * var(--u));
+  padding: 0 calc(18 * var(--u));
+  border-radius: calc(999 * var(--u));
+  background: linear-gradient(180deg, #FBE38A 0%, #D9A82C 100%);
+  border: 1px solid #A97C13;
+  color: #2A1D03;
+  font-size: calc(14 * var(--ut));
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 calc(2 * var(--u)) calc(10 * var(--u)) rgba(250, 204, 21, 0.35);
+  animation: tv4-discard-confirm-in 0.35s ease-out both;
+}
+.tv4-discard-confirm:hover { filter: brightness(1.06); }
+@keyframes tv4-discard-confirm-in {
+  from { transform: scale(0.86); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+/* 底部主按钮切成「确认埋底」时也点亮，两处状态必须一致 */
+.tv4-pass-btn.is-confirm {
+  background: linear-gradient(180deg, #FBE38A 0%, #D9A82C 100%);
+  border-color: #A97C13;
+  color: #2A1D03;
+}
+
+/* 出牌区（提示 / 出牌 / 倒计时）。
+ * 以前这块只在 @media (pointer: coarse) 里定义，桌面端拿不到任何定位，
+ * 结果 position:static 让它落在牌桌左上角 (0,0)，直接压住顶栏的菜单按钮，
+ * 「提示」按钮实测被顶栏 intercept，点不动。基础样式必须写在这里。 */
+/* 出牌区现在是底栏 flex 行里的一员（在语音/聊天按钮左边），
+ * 不再用 absolute + 手算 right 偏移。这样：
+ *   - 永远不会和语音/聊天按钮重叠（间距由 flex gap 保证）；
+ *   - 也不会压住手牌（它在底栏里，本来就不覆盖牌区）；
+ *   - 不随人数（4/5/6人座位分布）漂移。
+ * 别改回 position:absolute —— 那个写法要人工维护 right 偏移量去避让
+ * 语音按钮，实测已经压掉语音按钮 30% 的可点区域。 */
+.tv4-play-actions {
+  display: flex;
+  align-items: center;
+  gap: calc(12 * var(--u));
+  margin-left: auto;              /* 靠右收拢，和语音/聊天按钮同排 */
+  margin-right: calc(10 * var(--u));
+  flex-shrink: 0;
+}
+
+/* ===== 新增：回合倒计时 ===== */
+.tv4-turn-timer {
+  min-width: calc(52 * var(--u)); height: calc(52 * var(--u)); padding: 0 calc(10 * var(--u));
+  border-radius: 50%;
+  background: var(--tv4-glass-strong);
+  border: calc(2 * var(--u)) solid var(--tv4-line-gold);
+  color: var(--tv4-text); font-size: calc(20 * var(--ut)); font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+.tv4-turn-timer.is-urgent {
+  border-color: #F87171;
+  color: #FCA5A5;
+  animation: tv4-timer-pulse 0.9s ease-in-out infinite;
+}
+@keyframes tv4-timer-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.09); }
+}
+
+/* ===== 新增：等待阶段座位管理 ===== */
+.tv4-seat-admin { display: flex; gap: calc(12 * var(--u)); justify-content: center; margin-bottom: calc(16 * var(--u)); }
+.tv4-seat-admin .tv4-pass-btn {
+  --tv4-btn-minw: calc(92 * var(--u));
+  --tv4-btn-h: calc(44 * var(--u));
+  --tv4-btn-fs: calc(16 * var(--ut));
+  padding: 0 calc(12 * var(--u));
+}
+
+/* ===== 新增：托管提示条 ===== */
+.tv4-trustee-bar {
+  position: absolute; top: calc(72 * var(--u)); left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex; align-items: center; gap: calc(14 * var(--u));
+  padding: calc(9 * var(--u)) calc(16 * var(--u));
+  background: rgba(180, 83, 9, 0.94);
+  border: 1px solid #FCD34D;
+  border-radius: calc(12 * var(--u));
+  color: #FEF3C7; font-size: calc(14 * var(--ut)); font-weight: 700;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+}
+.tv4-trustee-bar button {
+  padding: calc(5 * var(--u)) calc(12 * var(--u));
+  border-radius: calc(8 * var(--u));
+  background: #FCD34D;
+  border: none;
+  color: #78350F; font-size: calc(13 * var(--ut)); font-weight: 800;
+  cursor: pointer;
+}
+
+/* ===== 新增：错误提示 ===== */
+.tv4-error-toast {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 80;
+  max-width: 78%;
+  padding: calc(12 * var(--u)) calc(22 * var(--u));
+  background: rgba(127, 29, 29, 0.95);
+  border: 1px solid #F87171;
+  border-radius: calc(12 * var(--u));
+  color: #FEE2E2; font-size: calc(15 * var(--ut)); font-weight: 700;
+  text-align: center;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.45);
+}
+
+/* ===== 新增：聊天面板 ===== */
+.tv4-chat-panel {
+  position: absolute; right: calc(16 * var(--u)); bottom: calc(96 * var(--u));
+  z-index: 70;
+  width: calc(300 * var(--u)); max-height: calc(260 * var(--u));
+  display: flex; flex-direction: column;
+  background: var(--tv4-panel-bg);
+  border: 1px solid var(--tv4-line-gold-soft);
+  border-radius: calc(14 * var(--u));
+  box-shadow: 0 10px 32px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+.tv4-chat-log { flex: 1; overflow-y: auto; padding: calc(10 * var(--u)) calc(12 * var(--u)); display: flex; flex-direction: column; gap: calc(6 * var(--u)); }
+.tv4-chat-empty { color: rgba(255,255,255,0.4); font-size: calc(13 * var(--ut)); text-align: center; padding: calc(16 * var(--u)) 0; }
+.tv4-chat-line { font-size: calc(13 * var(--ut)); line-height: 1.5; word-break: break-word; }
+.tv4-chat-who { color: var(--tv4-text-gold); font-weight: 700; margin-right: calc(6 * var(--u)); }
+.tv4-chat-text { color: rgba(255,255,255,0.9); }
+.tv4-chat-input-row { display: flex; gap: calc(6 * var(--u)); padding: calc(8 * var(--u)); border-top: 1px solid rgba(255,255,255,0.12); }
+.tv4-chat-input {
+  flex: 1; min-width: 0;
+  padding: calc(7 * var(--u)) calc(10 * var(--u));
+  border-radius: calc(8 * var(--u));
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: #fff; font-size: calc(13 * var(--ut));
+}
+.tv4-chat-input::placeholder { color: rgba(255,255,255,0.35); }
+.tv4-chat-send {
+  padding: calc(7 * var(--u)) calc(14 * var(--u));
+  border-radius: calc(8 * var(--u));
+  background: var(--grad-button, linear-gradient(180deg, #FACC15, #CA8A04));
+  border: none;
+  color: var(--tv4-text-on-gold); font-size: calc(13 * var(--ut)); font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* 横屏小屏：控件尺寸已由 --u 等比缩小，这里只把 5/6 人局的顶部座位
+   按百分比重排，避免固定 px 偏移在窄屏上互相重叠。 */
+@media (max-height: 460px) {
+  .tv4-player.top-left  { left: 18%; top: calc(40 * var(--u)); }
+  .tv4-player.top-right { right: 18%; top: calc(40 * var(--u)); }
+  .tv4-table[data-players="6"] .tv4-player.top { top: calc(28 * var(--u)); }
+  .tv4-table[data-players="6"] .tv4-player.top-left  { left: 24%; top: calc(44 * var(--u)); }
+  .tv4-table[data-players="6"] .tv4-player.top-right { right: 24%; top: calc(44 * var(--u)); }
+}
+
+/* 大小王角标：中文两字竖排，和 CONTEXT.md 的术语保持一致 */
+.tv4-hc-joker {
+  font-size: 10px;
+  line-height: 1.05;
+  writing-mode: vertical-rl;
+  letter-spacing: 1px;
+  font-weight: 800;
+}
+
+/* ===== 顶栏浮层：菜单 / 记录 / 设置 ===== */
+.tv4-panel-backdrop {
+  position: absolute; inset: 0;
+  z-index: 80;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: calc(64 * var(--u)) calc(16 * var(--u)) calc(16 * var(--u));
+}
+.tv4-panel {
+  width: calc(340 * var(--u)); max-width: 100%;
+  max-height: calc(100% - calc(80 * var(--u)));
+  display: flex; flex-direction: column;
+  background: var(--tv4-panel-bg);
+  border: 1px solid var(--tv4-line-gold-soft);
+  border-radius: calc(14 * var(--u));
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+  animation: tv4-panel-in 0.16s ease-out;
+}
+@keyframes tv4-panel-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+.tv4-panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: calc(12 * var(--u)) calc(14 * var(--u));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+}
+.tv4-panel-title { color: var(--tv4-text-gold); font-size: calc(16 * var(--ut)); font-weight: 800; }
+.tv4-panel-close {
+  /* 见 legal-doc-close：换成 SVG 图标后必须显式居中 */
+  display: inline-flex; align-items: center; justify-content: center;
+  width: calc(28 * var(--u)); height: calc(28 * var(--u)); border-radius: calc(8 * var(--u));
+  background: rgba(255, 255, 255, 0.08);
+  border: none; color: rgba(255, 255, 255, 0.8);
+  font-size: calc(14 * var(--ut)); cursor: pointer;
+}
+.tv4-panel-close:hover { background: rgba(255, 255, 255, 0.16); }
+.tv4-panel-body { padding: calc(10 * var(--u)) calc(12 * var(--u)) calc(14 * var(--u)); overflow-y: auto; }
+
+/* 列表项（菜单/设置共用） */
+.tv4-panel-item {
+  width: 100%;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: calc(12 * var(--u)) calc(12 * var(--u));
+  margin-bottom: calc(6 * var(--u));
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: calc(10 * var(--u));
+  color: rgba(255, 255, 255, 0.92);
+  font-size: calc(15 * var(--ut)); font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.tv4-panel-item:hover { background: rgba(255, 255, 255, 0.12); }
+.tv4-panel-item.is-danger { color: #FCA5A5; border-color: rgba(252, 165, 165, 0.3); }
+.tv4-panel-arrow { color: rgba(255, 255, 255, 0.45); font-size: calc(18 * var(--ut)); }
+.tv4-panel-switch {
+  font-size: calc(13 * var(--ut)); font-weight: 700;
+  padding: calc(3 * var(--u)) calc(10 * var(--u)); border-radius: calc(999 * var(--u));
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.55);
+}
+.tv4-panel-switch.is-on { background: rgba(74, 222, 128, 0.2); color: #86EFAC; }
+
+/* 房间号 */
+.tv4-panel-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: calc(10 * var(--u)) calc(12 * var(--u)); margin-bottom: calc(8 * var(--u));
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: calc(10 * var(--u));
+}
+.tv4-panel-label { color: rgba(255, 255, 255, 0.6); font-size: calc(13 * var(--ut)); }
+.tv4-panel-code {
+  display: flex; align-items: center; gap: calc(8 * var(--u));
+  background: none; border: none; cursor: pointer;
+  color: var(--tv4-text-gold); font-size: calc(16 * var(--ut)); font-weight: 800;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 1px;
+}
+.tv4-panel-copy {
+  font-size: 11px; font-weight: 700; letter-spacing: 0;
+  padding: 2px calc(8 * var(--u)); border-radius: calc(999 * var(--u));
+  background: rgba(252, 211, 77, 0.18);
+  color: #FCD34D;
+  font-family: inherit;
+}
+
+/* 记录面板 */
+.tv4-panel-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: calc(8 * var(--u));
+  margin-bottom: calc(12 * var(--u));
+}
+.tv4-panel-stat {
+  display: flex; flex-direction: column; gap: calc(3 * var(--u));
+  padding: calc(9 * var(--u)) calc(11 * var(--u));
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: calc(10 * var(--u));
+}
+.tv4-panel-stat-label { color: rgba(255, 255, 255, 0.55); font-size: calc(12 * var(--ut)); }
+.tv4-panel-stat strong { color: #FEF08A; font-size: calc(17 * var(--ut)); font-weight: 800; }
+.tv4-panel-section {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: calc(12 * var(--ut)); font-weight: 700;
+  margin: calc(12 * var(--u)) 0 calc(6 * var(--u));
+  letter-spacing: 0.5px;
+}
+.tv4-panel-list { list-style: none; margin: 0; padding: 0; }
+.tv4-panel-list-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: calc(8 * var(--u)) calc(11 * var(--u)); margin-bottom: calc(4 * var(--u));
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: calc(8 * var(--u));
+  font-size: calc(13 * var(--ut));
+}
+.tv4-panel-who { color: rgba(255, 255, 255, 0.9); font-weight: 700; }
+.tv4-panel-val { color: rgba(255, 255, 255, 0.65); }
+.tv4-panel-badge {
+  margin-left: calc(6 * var(--u)); padding: 1px calc(6 * var(--u));
+  border-radius: calc(4 * var(--u)); font-size: 11px;
+  background: rgba(248, 113, 113, 0.25); color: #FCA5A5;
+}
+.tv4-panel-empty {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: calc(13 * var(--ut)); text-align: center; padding: calc(14 * var(--u)) 0;
+}
+.tv4-panel-note {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: calc(12 * var(--ut)); line-height: 1.6;
+  margin-top: calc(10 * var(--u)); padding: calc(8 * var(--u)) calc(10 * var(--u));
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: calc(8 * var(--u));
+}
+
+/* 横屏矮屏：面板整体已随 --u 缩小，只把顶部留白改小，
+   让面板在 390 高的屏幕上也完整落在可视区内。 */
+@media (max-height: 460px) {
+  .tv4-panel-backdrop { padding: calc(44 * var(--u)) calc(12 * var(--u)) calc(12 * var(--u)); }
+  .tv4-panel { max-height: calc(100% - 56 * var(--u)); }
+}
+
+/* ===== 甩牌结果提示 ===== */
+/* 位置比错误提示更靠上，避免两者同时出现时叠在一起 */
+.tv4-toss-toast {
+  position: absolute; top: 30%; left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 78;
+  max-width: 76%;
+  padding: calc(11 * var(--u)) calc(20 * var(--u));
+  background: var(--tv4-panel-bg);
+  border: 1px solid var(--tv4-line-gold);
+  border-radius: calc(12 * var(--u));
+  color: #FEF08A;
+  font-size: calc(15 * var(--ut)); font-weight: 700;
+  text-align: center;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+  animation: tv4-toss-in 0.2s ease-out;
+}
+@keyframes tv4-toss-in {
+  from { opacity: 0; transform: translate(-50%, -60%); }
+  to   { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+/* 甩牌按钮禁用态：不可甩时明确不可点，配合 title 说明原因 */
+.tv4-action-btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+/* 「暂时不满足条件」的弱化态。
+   注意和 :disabled 的区别：is-muted 仍然**可以点击**，点了会 toast 说明原因。
+   手机上没有 hover，title 看不到，真 disabled 会让玩家以为功能坏了
+   （用户反馈「有时候甩不了牌」）。所以这里只做视觉弱化，不拦事件。
+   opacity 比 :disabled 高一点，暗示「能点，但先看提示」。 */
+.tv4-action-btn.is-muted {
+  opacity: 0.62;
+}
+
+/* ============================================================
+   防溢出 + 触控尺寸下限
+   ------------------------------------------------------------
+   等比缩放解决了「手机上整体偏大」，但两件事必须单独兜住：
+   1. 顶栏/操作条是横向 flex，子项默认不收缩，窄屏会顶出屏幕；
+   2. 按钮等比缩小后可能小于手指可点范围，交互元素要有绝对下限。
+   ============================================================ */
+.tv4-table,
+.tv4-topbar,
+.tv4-bottombar,
+.tv4-anti-wrap,
+.tv4-anti-bar,
+.tv4-bottom-center {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+/* 弹窗不能进上面那组：min-width:0 会盖掉它自己的下限宽度
+   （同选择器权重、位置更靠后就赢），弹窗又会缩回"小气"的样子。 */
+.tv4-call-dialog {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.tv4-topbar { gap: calc(8 * var(--u)); }
+.tv4-scoreboard { min-width: 0; flex-shrink: 1; overflow: hidden; }
+.tv4-topbar-right { flex-shrink: 0; }
+.tv4-icon-btn { flex-shrink: 0; }
+
+/* 操作区整体不超过可视宽度，窄屏允许换行而不是溢出 */
+.tv4-anti-wrap {
+  width: max-content;
+  max-width: calc(100% - 16 * var(--u));
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.tv4-anti-bar { flex-wrap: wrap; justify-content: center; }
+.tv4-bid-range { max-width: 100%; }
+
+/* 触屏设备：等比缩放会把按钮一起缩小，这里给可点元素兜一个绝对下限。
+   36px 是横屏手机上不误触的实测底线（iOS 建议 44pt，但牌桌横屏只有
+   390 高，全部按 44 会挤掉手牌区，故对牌面外的控件取 36）。 */
+@media (pointer: coarse) {
+  .tv4-icon-btn,
+  .tv4-chat-btn,
+  .tv4-anti-btn,
+  .tv4-bid-step,
+  .tv4-panel-close {
+    min-width: max(36px, calc(34 * var(--u)));
+    min-height: max(36px, calc(34 * var(--u)));
+  }
+  /* 语音两个按钮要 44 不要 36：
+     「按住说话」是长按手势，比普通点按更依赖触摸面积；上一版按 36 兜底
+     实测在 812x375 手机上只算出 34x22 px，用户反馈"手机端语音用不了"。
+     这条必须放在上面那组之后，否则会被 36 的规则压回去。 */
+  .tv4-voice-btn,
+  .tv4-voice-mute-btn {
+    min-width: max(44px, calc(44 * var(--u)));
+    min-height: max(44px, calc(44 * var(--u)));
+  }
+  .tv4-pass-btn { min-height: max(40px, var(--tv4-btn-h)); }
+  .tv4-action-btn { min-height: max(32px, calc(24 * var(--u))); }
+}
+
+/* 等待阶段的房间号（点击复制）。
+   微信 / QQ / 邀请链接的分享条已删除，这里是牌桌上唯一的分享入口。 */
+.tv4-room-invite {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(10 * var(--u));
+  margin-bottom: calc(14 * var(--u));
+}
+.tv4-room-code {
+  min-width: calc(96 * var(--u));
+  padding: 0 calc(14 * var(--u));
+  height: calc(44 * var(--u));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(10 * var(--u));
+  border: calc(1 * var(--u)) solid var(--tv4-line-gold);
+  border-radius: calc(24 * var(--u));
+  color: var(--tv4-text-gold);
+  background: var(--tv4-glass-strong);
+  font-size: calc(17 * var(--ut));
+  font-weight: 800;
+  letter-spacing: calc(2 * var(--u));
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.tv4-room-code:hover { background: var(--tv4-glass-hover); }
+/* 「点击复制 / 已复制」小标：等宽字体下 letter-spacing 会把它拉散，单独归零 */
+.tv4-room-code-hint {
+  padding: 2px calc(8 * var(--u));
+  border-radius: calc(999 * var(--u));
+  background: rgba(252, 211, 77, 0.18);
+  color: var(--tv4-text-gold);
+  font-family: var(--font-sans, inherit);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+/* ===== 发牌 / 翻面 / 理牌动画 =====
+ * 时间线常量在 components/dealAnimation.ts，两边必须一致。
+ * 这里只负责「怎么画」，「什么时候画」由 useDealAnimation 切 data-deal-stage。
+ *
+ * 关键约束（改动时别踩）：
+ * 1) 卡面的 transform 已经被选中态 / hover 抬升占用了，所以飞入位移不能直接
+ *    写在 .tv4-hand-card--flat 上 —— 用 @keyframes 动画覆盖，动画结束即交回，
+ *    这样翻完面后 hover 与选中抬升立刻恢复正常。
+ * 2) 理牌位移（FLIP）的 transform 挂在【槽位】上，由 JS 在 useLayoutEffect 里
+ *    直接写行内样式，CSS 不要给 .tv4-hand-slot 加 transform，会互相打架。
+ */
+
+/* 发牌期间锁交互：光标也要变，不然玩家会以为是卡住了 */
+.tv4-hand-row.is-dealing { cursor: default; }
+.tv4-hand-row.is-dealing .tv4-hand-slot { cursor: default; }
+/* 动画期间不要 hover 抬升：牌正在飞，抬起来会打断动画轨迹 */
+.tv4-hand-row.is-dealing .tv4-hand-slot:hover > .tv4-hand-card--flat {
+  transform: none;
+  box-shadow: none;
+}
+
+/* 3D 翻面需要父级有景深，且两面都要能背面隐藏 */
+.tv4-hand-card--flat.is-dealing {
+  transform-style: preserve-3d;
+  /* 飞入：从牌桌中央（牌堆位置）斜着滑进手牌位，带一点旋转更有手感 */
+  animation: tv4-deal-fly 260ms cubic-bezier(0.18, 0.72, 0.34, 1) both;
+  animation-delay: var(--tv4-deal-delay, 0ms);
+  /* 飞行时不要再吃 hover/选中的过渡，否则和 keyframes 抢同一个 transform */
+  transition: none;
+}
+
+/* 牌正面 / 背面：翻面靠两层各自绕 Y 轴转，背面转走、正面转来 */
+.tv4-hand-card-face,
+.tv4-hand-card-back {
+  position: absolute;
+  inset: 0;
+  border-radius: calc(6 * var(--u));
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+/* 平时（非发牌）背面完全不参与渲染，避免盖住正面 */
+.tv4-hand-card-back { display: none; }
+.tv4-hand-card--flat.is-dealing .tv4-hand-card-back {
+  display: block;
+  /* 牌背花纹：斜向条纹 + 中央菱形，纯 CSS，不额外拉图 */
+  background:
+    repeating-linear-gradient(45deg,
+      rgba(255,255,255,0.10) 0 calc(3 * var(--u)),
+      rgba(255,255,255,0) calc(3 * var(--u)) calc(6 * var(--u))),
+    linear-gradient(160deg, #1E4FA8 0%, #14357A 55%, #0E2557 100%);
+  border: 1px solid rgba(255, 215, 90, 0.30);
+  box-shadow: inset 0 0 calc(10 * var(--u)) rgba(0,0,0,0.35);
+}
+
+/* 翻面：背面从 0° 转到 -180°，正面从 180° 转到 0°，同一时刻只有一面朝前 */
+.tv4-hand-card--flat.is-facedown .tv4-hand-card-back  { transform: rotateY(0deg); }
+.tv4-hand-card--flat.is-facedown .tv4-hand-card-face  { transform: rotateY(180deg); }
+
+.tv4-hand-card--flat.is-dealing:not(.is-facedown) .tv4-hand-card-back {
+  animation: tv4-deal-flip-back 200ms ease-in both;
+  animation-delay: var(--tv4-flip-delay, 0ms);
+}
+.tv4-hand-card--flat.is-dealing:not(.is-facedown) .tv4-hand-card-face {
+  animation: tv4-deal-flip-face 200ms ease-out both;
+  animation-delay: var(--tv4-flip-delay, 0ms);
+}
+
+@keyframes tv4-deal-fly {
+  from {
+    /* 起点 = 中央牌堆。--tv4-fly-x/y 是 JS 逐张量出来的「到牌堆的距离」，
+       所有牌因此都从同一个点散开。
+       别改回写死的 vw/vh 偏移：那是相对每张牌自己的终点算的，
+       右边的牌会从屏幕外出发（36 张时最右一张起点 x≈1078 > 844 屏宽）。 */
+    transform:
+      translate3d(var(--tv4-fly-x, 0px), var(--tv4-fly-y, -120px), 0)
+      rotate(-12deg) scale(0.72);
+    opacity: 0;
+  }
+  30% { opacity: 1; }
+  to {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes tv4-deal-flip-back {
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(-180deg); }
+}
+@keyframes tv4-deal-flip-face {
+  from { transform: rotateY(180deg); }
+  to   { transform: rotateY(0deg); }
+}
+
+/* 发牌阶段的中央提示：替代原来那个突兀的大「准备」按钮 */
+.tv4-deal-banner {
+  position: absolute;
+  top: 46%; left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 24;
+  display: flex; flex-direction: column; align-items: center;
+  gap: calc(10 * var(--u));
+  pointer-events: none;
+}
+.tv4-deal-banner .tv4-deal-title {
+  color: #FDE68A;
+  font-size: calc(26 * var(--u));
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-shadow: 0 calc(2 * var(--u)) calc(10 * var(--u)) rgba(0,0,0,0.55);
+}
+.tv4-deal-banner .tv4-deal-sub {
+  color: rgba(255,255,255,0.72);
+  font-size: calc(14 * var(--ut));
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+/* 发牌时中央的牌堆：三张叠影，轻微起伏，暗示「牌从这里发出去」 */
+.tv4-deal-stack {
+  position: relative;
+  width: calc(52 * var(--u)); height: calc(76 * var(--u));
+}
+.tv4-deal-stack i {
+  position: absolute; inset: 0;
+  border-radius: calc(6 * var(--u));
+  background: linear-gradient(160deg, #1E4FA8 0%, #14357A 55%, #0E2557 100%);
+  border: 1px solid rgba(255, 215, 90, 0.30);
+  box-shadow: 0 calc(4 * var(--u)) calc(12 * var(--u)) rgba(0,0,0,0.4);
+  animation: tv4-deal-stack-bob 1.1s ease-in-out infinite;
+}
+.tv4-deal-stack i:nth-child(1) { transform: translate(calc(-5 * var(--u)), calc(-4 * var(--u))) rotate(-7deg); animation-delay: 0s; }
+.tv4-deal-stack i:nth-child(2) { transform: translate(0, 0) rotate(2deg);                                      animation-delay: 0.12s; }
+.tv4-deal-stack i:nth-child(3) { transform: translate(calc(5 * var(--u)), calc(4 * var(--u))) rotate(9deg);     animation-delay: 0.24s; }
+
+@keyframes tv4-deal-stack-bob {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.22); }
+}
+
+/* 无障碍：系统开了「减少动态效果」就只做淡入，不飞不翻 */
+@media (prefers-reduced-motion: reduce) {
+  .tv4-hand-card--flat.is-dealing {
+    animation: tv4-deal-fade 160ms ease-out both;
+    animation-delay: 0ms;
+  }
+  .tv4-hand-card--flat.is-dealing .tv4-hand-card-back { display: none; }
+  .tv4-hand-card--flat.is-dealing:not(.is-facedown) .tv4-hand-card-face,
+  .tv4-hand-card--flat.is-dealing .tv4-hand-card-face { animation: none; transform: none; }
+  .tv4-deal-stack i { animation: none; }
+  @keyframes tv4-deal-fade { from { opacity: 0; } to { opacity: 1; } }
+}
+
+/* ============================================================
+   手机端牌面花色简洁化 + 中央区域不重叠
+   ------------------------------------------------------------
+   手机横屏高度只有 ~380-420px，叫主/叫分/出牌三个面板都挤中央会重叠。
+   核心策略：
+   - 叫主/叫分面板上移，按钮缩小，标题做成胶囊标签而不是横幅
+   - 出牌/提示按钮下移、变窄，不和中央牌阵重叠
+   - 牌面花色符号改成大号加粗，手机上一眼能分清
+   ============================================================ */
+/* 条件里带上 (max-height: 480px)：部分安卓 WebView / 投屏浏览器不上报
+   pointer: coarse，只写 coarse 时那些机型会回落到桌面排版，出牌按钮就压回
+   手牌上方、盖住「取消选择」。横屏可用高 < 480px 一定是手机形态，一起套用。 */
+@media (pointer: coarse), (max-height: 480px) {
+  /* 手机横屏把比分说明缩成「庄分 / 闲分」，保留最关键的阵营和数字。
+     完整称呼仍在 DOM 中供宽屏与读屏使用，不把全站文案永久改成缩写。 */
+  .tv4-score-label-full { display: none; }
+  .tv4-score-label-compact { display: inline; }
+  .tv4-scoreboard {
+    margin-left: calc(12 * var(--u));
+    padding: calc(5 * var(--u)) calc(6 * var(--u));
+  }
+  .tv4-score-main,
+  .tv4-score-catch {
+    padding: 0 calc(8 * var(--u));
+    gap: calc(5 * var(--u));
+  }
+  .tv4-topbar-right { gap: calc(8 * var(--u)); }
+
+  /* 手牌是互相压叠的，一张只露出 --tv4-step 宽的一条（27 张时 ~21px）。
+     这一条里原来同时挤着「点数 + 角标花色 + 中央大花色」，中央那个 23px 的
+     ♠ 还会横跨到隔壁牌的可见区上 —— 看起来就是几个花色糊成一团。
+     手机端只保留左上角标：点数一行、花色一行，整体居中在露出的那一条里，
+     花色字号放大到能一眼分清 ♠ / ♣。 */
+  .tv4-hand-card--flat .tv4-hc-corner {
+    left: 0;
+    top: calc(4 * var(--u));
+    /* 宽度 = 这张牌真正露出来的那一条（用纯 vw 的 --tv4-strip，不能用
+       --tv4-step，见上面注释），符号才会落在可见区正中而不被邻牌压掉。 */
+    width: min(var(--tv4-strip, calc(22 * var(--u))), var(--tv4-cw));
+    /* 点数和花色之间留出真实间距。原来两行贴在一起（gap 0 + line-height 1），
+       ♦ 和 ♣ 这类实心符号紧挨着点数，看起来就是"挤成一团"。 */
+    gap: calc(3 * var(--u));
+  }
+  .tv4-hand-card--flat .tv4-hc-rank {
+    /* 上限从 15ut 抬到 19ut：strip 下限已提到 22u，放得下更大的字。 */
+    font-size: min(calc(19 * var(--ut)), calc(0.82 * var(--tv4-strip, 22px)));
+    font-weight: 900;
+    line-height: 1;
+  }
+  .tv4-hand-card--flat .tv4-hc-suit {
+    /* 花色是分牌的关键信息，给到和点数同级的字号（上限 20ut），
+       同时不超过露出宽度的 0.92 倍 —— 48 张时自动收小，永远整个可见。 */
+    font-size: min(calc(20 * var(--ut)), calc(0.92 * var(--tv4-strip, 22px)));
+    font-weight: 900;
+    line-height: 1;
+    margin-top: 0;
+    letter-spacing: 0;
+  }
+  /* ===== 手机端一律只留左上角标（点数 + 花色）=====
+     手机上整张牌只有 ~39x57px（实测 812x375 视口）。这么小的牌上同时画
+     「左上角标 + 中央大花色 + 右下角标」，三者必然互相压：实测中央花色
+     与左上角标重叠 10x15px、与右下角标重叠 10x15px —— 屏幕上看到的就是
+     「几个方片叠在一起、分不清是哪个花色」。
+
+     真实扑克之所以能放中央花色，是因为实物牌有 ~57x87mm；缩到 39px 宽
+     还硬塞三处花色只会互相糊掉。所以手机端统一只保留左上角标一处，
+     把它放大到能一眼分清 ♠/♣、♥/♦，其余两处全部去掉。
+
+     注意范围：这里不能只写 .tv4-hand-card--flat（手牌），
+     牌阵（.tv4-trick-card）和底牌（.tv4-discard-card）同样是小牌，
+     之前漏了它们，所以出牌区和扣底区的花色一直在重叠。 */
+  .tv4-hc-center,
+  .tv4-hc-bcorner { display: none; }
+
+  /* 主牌「主」字标：手机端牌只露出左侧一条（--tv4-strip，最窄 ~21px），
+     标签必须整个落在这条里，否则会被右边的邻牌压掉一半，看着像半个字。
+     宽度跟着 strip 收，并封一个 10u 下限保证 48 张极限手牌下还认得出。 */
+  .tv4-hand-card--flat .tv4-hc-main-tag {
+    left: 0;
+    width: min(var(--tv4-strip, calc(22 * var(--u))), var(--tv4-cw));
+    min-width: 0;
+    border-radius: 0 calc(3 * var(--u)) 0 calc(5 * var(--u));
+    /* 下限从 9ut 抬到 10.5ut：48 张极限手牌时 strip 只有 12.3px，
+       0.5*strip 算出来 7.9px，那个「主」字实测已经小到看不清是什么字。
+       抬到 10.5ut(≈9.2px) 仍能整个落在竖条内（实测无裁切、无重叠）。 */
+    font-size: max(calc(10.5 * var(--ut)), min(calc(11 * var(--ut)), calc(0.5 * var(--tv4-strip, 22px))));
+    line-height: 1.2;
+  }
+
+  /* 角标放大：牌小了，字反而要大才认得出。
+     上限用卡片宽度的比例兜住，48 张手牌那种极窄条也不会溢出。 */
+  .tv4-hc-suit {
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 0;
+    font-size: min(calc(20 * var(--ut)), calc(0.42 * var(--tv4-cw)));
+  }
+  .tv4-hc-rank {
+    font-weight: 900;
+    font-size: min(calc(19 * var(--ut)), calc(0.40 * var(--tv4-cw)));
+  }
+  /* 叫主/叫分弹窗：中央牌上移到顶栏下方，弹窗落在中段，两块不重叠。
+     手机横屏可用高只有 ~200px，弹窗整体压一档：标题小一号、
+     花色按钮小一号、按钮行仍然横排（横排比竖排省 ~40px 高）。 */
+  .tv4-anti-wrap {
+    top: 54%;
+  }
+  .tv4-call-dialog {
+    gap: calc(7 * var(--u));
+    padding: calc(9 * var(--u)) calc(12 * var(--u)) calc(10 * var(--u));
+    border-radius: calc(14 * var(--u));
+  }
+  .tv4-call-title {
+    padding: calc(2 * var(--u)) calc(12 * var(--u));
+    font-size: calc(12 * var(--ut));
+  }
+  .tv4-call-body { gap: calc(6 * var(--u)); }
+  .tv4-call-hint {
+    /* 不再写 max-width：240u 在手机上只 132px，会把提示又缩回弹窗中间 */
+    font-size: calc(11 * var(--ut));
+    line-height: 1.35;
+  }
+  .tv4-call-actions { gap: calc(8 * var(--u)); }
+  .tv4-call-actions .tv4-pass-btn {
+    /* 最长文案是「叫 105 分」(6 字符)：下限按 6×15 + 左右各 9 留白估到 108u，
+       实际宽度再由 padding + nowrap 撑开，任何屏宽都不裁字。 */
+    --tv4-btn-minw: calc(108 * var(--u));
+    --tv4-btn-h: calc(38 * var(--u));
+    --tv4-btn-fs: calc(15 * var(--ut));
+    letter-spacing: 0;
+    border-radius: calc(12 * var(--u));
+    padding: 0 calc(10 * var(--u));
+  }
+  .tv4-anti-bar {
+    padding: calc(5 * var(--u)) calc(8 * var(--u));
+    gap: calc(6 * var(--u));
+  }
+  .tv4-anti-btn {
+    width: calc(46 * var(--u));
+    height: calc(48 * var(--u));
+  }
+  .tv4-anti-suit { font-size: calc(20 * var(--u)); }
+  .tv4-anti-name { font-size: 10px; }
+  .tv4-bid-stepper { gap: calc(8 * var(--u)); }
+  .tv4-bid-step {
+    width: calc(36 * var(--u));
+    height: calc(36 * var(--u));
+    font-size: calc(20 * var(--u));
+  }
+  .tv4-bid-value { min-width: calc(76 * var(--u)); }
+  .tv4-bid-value strong { font-size: calc(28 * var(--u)); }
+  .tv4-bid-value span { font-size: calc(12 * var(--ut)); }
+  /* 宽度不写死（原 180u ≈ 99px）：弹窗已加宽到 520px，写死就只占中间一小条。
+     只把拖动条高度压一点，宽度交给基础规则的 width:100% 撑满。 */
+  .tv4-bid-range { height: calc(18 * var(--u)); }
+  .tv4-table[data-calling-stage="score"] .tv4-anti-wrap {
+    /* 叫分弹窗比叫主的花色条高一截，锚点要再抬一点，
+       否则弹窗底沿会压进手牌区。 */
+    top: 51%;
+  }
+  /* 出牌区：手机横屏只有 ~375px 高，牌桌上下都被占满 ——
+   * 居中浮在手牌上方时实测会盖住 6~7 张手牌的点击热区（elementFromPoint
+   * 落到按钮上），那几张牌永远选不中。中央牌阵（.tv4-trick）和座位也没有
+   * 富余空间可借。
+   *
+   * 底栏本身就是操作条，而且很空：甩牌 + 底 + 倍 只用掉中间 ~170px，
+   * 右侧到聊天按钮之间整段是白地。所以把「提示 / 出牌 / 倒计时」放进底栏
+   * 右段，同时让 .tv4-bottom-center 的内容靠左收拢腾位。
+   * 这样出牌区既不压手牌，也不随人数（4/5/6 人座位分布不同）而漂移。 */
+  .tv4-bottom-center {
+    justify-content: flex-start;
+    gap: calc(14 * var(--u));
+    padding-left: calc(8 * var(--u));
+  }
+  /* 「已选 N 张 / 取消选择」原来居中浮在手牌上方，和右下的出牌区在窄屏上会
+     撞到一起（出牌按钮 z-index 更高，取消选择看得见点不动）。移到左侧固定位，
+     和出牌区分居两端，任何屏宽都不会叠。 */
+  .tv4-sel-bar {
+    left: calc(10 * var(--u));
+    right: auto;
+    transform: none;
+    top: calc(-4 * var(--u));
+    padding: calc(3 * var(--u)) calc(8 * var(--u));
+    gap: calc(6 * var(--u));
+  }
+  .tv4-sel-count { font-size: calc(12 * var(--ut)); }
+  .tv4-sel-clear { font-size: calc(11 * var(--ut)); }
+  /* 选牌条整体在手机横屏上只有 ~200px 余量，牌型标签跟着收，避免把「撤回」挤出去 */
+  .tv4-pattern-tag {
+    font-size: calc(11 * var(--ut));
+    padding: calc(1 * var(--u)) calc(7 * var(--u));
+  }
+  /* 窄屏只收紧间距即可；定位交给底栏的 flex 行。
+     这里以前是 position:absolute + right: max(70u,68px)，靠人工算偏移去
+     避让语音/聊天按钮 —— 语音按钮加宽后就对不上了，实测压掉它 10/34 列
+     可点区域。现在同排 flex，浏览器自己排，不会再撞。 */
+  .tv4-play-actions {
+    gap: calc(8 * var(--u));
+    margin-right: calc(6 * var(--u));
+  }
+  .tv4-play-actions .tv4-pass-btn {
+    --tv4-btn-minw: calc(78 * var(--u));
+    --tv4-btn-h: calc(34 * var(--u));
+    --tv4-btn-fs: calc(15 * var(--ut));
+    letter-spacing: 0;
+    border-radius: calc(12 * var(--u));
+    padding: 0 calc(10 * var(--u));
+  }
+  .tv4-play-actions .tv4-pass-btn--ghost {
+    /* 「提示」两个字，下限比主按钮小一档就够 */
+    --tv4-btn-minw: calc(56 * var(--u));
+    padding: 0 calc(8 * var(--u));
+  }
+  .tv4-turn-timer {
+    width: calc(32 * var(--u));
+    height: calc(32 * var(--u));
+    font-size: calc(13 * var(--ut));
+  }
+  /* 中央叫主牌：缩小并上移到顶栏下方，把中段整段让给操作区 */
+  .tv4-center {
+    top: calc(84 * var(--u));
+    transform: translateX(-50%);
+    gap: calc(10 * var(--u));
+    align-items: center;
+  }
+  .tv4-main-card {
+    width: calc(60 * var(--u));
+    height: calc(84 * var(--u));
+  }
+      /* 「叫主」两字挂在牌的【下方】：手机端中央牌已经上移到顶栏下面，
+     放上方会顶进顶栏的比分板行。只写 bottom 就够（基础样式本来就是 bottom），
+     另外必须显式 top: auto，否则和上一版留下的 top 叠加会把元素抻成竖条、
+     文字压在主牌中央。 */
+  .tv4-declare {
+    font-size: calc(13 * var(--ut));
+    top: auto;
+    bottom: calc(-15 * var(--u));
+    line-height: 1;
+    letter-spacing: 2px;
+  }
+}
+
+/* 特别矮屏（手机横屏 + 安全区）：再压一档，保证不打架 */
+@media (max-height: 400px) {
+  /* 底栏只有 ~35px 高，「名字 + 金币」竖排会一起顶出屏幕下沿（实测底沿
+     342px > 视口 340px，金币数字被切掉）。矮屏改横排，一行放得下。 */
+  .tv4-me-info {
+    flex-direction: row;
+    align-items: center;
+    gap: calc(8 * var(--u));
+  }
+  .tv4-me-coins { margin-top: 0; }
+  .tv4-me-avatar {
+    width: calc(38 * var(--u));
+    height: calc(38 * var(--u));
+    margin-top: calc(-12 * var(--u));
+    font-size: calc(19 * var(--u));
+  }
+  .tv4-anti-wrap { top: 50%; }
+  .tv4-table[data-calling-stage="score"] .tv4-anti-wrap { top: 48%; }
+  .tv4-center { top: calc(78 * var(--u)); }
+  .tv4-call-dialog { padding: calc(6 * var(--u)) calc(10 * var(--u)) calc(8 * var(--u)); gap: calc(5 * var(--u)); }
+  .tv4-call-hint { font-size: 10px; }
+  /* 滑杆不再写死宽（原 150u ≈ 82px，在已经加宽的弹窗里只占中间一小条），
+     高度压一点就好，宽度交给 width:100% 撑满。 */
+  .tv4-bid-range { height: calc(16 * var(--u)); }
+  .tv4-bid-value strong { font-size: calc(24 * var(--u)); }
+  .tv4-anti-btn { width: calc(42 * var(--u)); height: calc(44 * var(--u)); }
+  .tv4-anti-suit { font-size: calc(18 * var(--u)); }
+  .tv4-call-actions .tv4-pass-btn {
+    --tv4-btn-minw: calc(100 * var(--u));
+    --tv4-btn-h: calc(34 * var(--u));
+    --tv4-btn-fs: calc(14 * var(--ut));
+    padding: 0 calc(9 * var(--u));
+  }
+  /* 出牌区已经落在底栏里（见上一个 media block），这里只再压一点尺寸，
+     不要再动 bottom —— 改了就会重新压回手牌上。 */
+  .tv4-play-actions .tv4-pass-btn {
+    --tv4-btn-minw: calc(72 * var(--u));
+    --tv4-btn-h: calc(32 * var(--u));
+    --tv4-btn-fs: calc(14 * var(--ut));
+    padding: 0 calc(9 * var(--u));
+  }
+  .tv4-play-actions .tv4-pass-btn--ghost {
+    --tv4-btn-minw: calc(52 * var(--u));
+    padding: 0 calc(7 * var(--u));
+  }
+}
+
+/* ===== 牌背主题：个人中心 / 商城选的牌背在这里生效 ===== */
+.tv4-table[data-card-back="blue"]    { --tv4-back-a: #1E4FA8; --tv4-back-b: #14357A; --tv4-back-c: #0E2557; }
+.tv4-table[data-card-back="green"]   { --tv4-back-a: #1F7A56; --tv4-back-b: #145C3E; --tv4-back-c: #0B3A26; }
+.tv4-table[data-card-back="red"]     { --tv4-back-a: #A0392C; --tv4-back-b: #7A281E; --tv4-back-c: #4E1710; }
+.tv4-table[data-card-back="purple"]  { --tv4-back-a: #5B3FA0; --tv4-back-b: #402C78; --tv4-back-c: #241A4C; }
+.tv4-table[data-card-back="gold"]    { --tv4-back-a: #A57F3C; --tv4-back-b: #7E5F2A; --tv4-back-c: #4E3A18; }
+.tv4-table[data-card-back="festive"] { --tv4-back-a: #C0392B; --tv4-back-b: #93251A; --tv4-back-c: #5C130D; }
+
+/* 覆盖上面写死的蓝金渐变，改用主题变量（有回落值，单独渲染牌桌也不会变透明） */
+.tv4-hand-card--flat.is-dealing .tv4-hand-card-back {
+  background:
+    repeating-linear-gradient(45deg,
+      rgba(255,255,255,0.10) 0 calc(3 * var(--u)),
+      rgba(255,255,255,0) calc(3 * var(--u)) calc(6 * var(--u))),
+    linear-gradient(160deg,
+      var(--tv4-back-a, #1E4FA8) 0%,
+      var(--tv4-back-b, #14357A) 55%,
+      var(--tv4-back-c, #0E2557) 100%);
+}
+
+/* ============================================================
+   小尺寸牌的花色不再互相压
+   ============================================================
+   .tv4-hc-* 的字号原来是固定值（点数 18ut / 花色 17ut / 中央 34u），
+   不跟着卡片尺寸缩。于是同一套字号被套在三种尺寸的牌上：
+     手牌 78x116  → 勉强放得下
+     牌阵 64x94   → 左上角标与中央花色重叠 5x17px
+     底牌（扣底）  → 同样重叠
+   屏幕上的表现就是「方块／梅花两个挤在一起，看不清是什么牌」。
+
+   修法：给小牌单独收一档字号，并把中央大花色缩小、让它真正待在牌中央
+   （不与两个角标的行占位相交）。手牌保持原样，不受影响。 */
+.tv4-hand-card--trick .tv4-hc-rank,
+.tv4-discard-card .tv4-hc-rank {
+  font-size: calc(14 * var(--ut));
+}
+.tv4-hand-card--trick .tv4-hc-suit,
+.tv4-discard-card .tv4-hc-suit {
+  font-size: calc(13 * var(--ut));
+}
+.tv4-hand-card--trick .tv4-hc-center,
+.tv4-discard-card .tv4-hc-center {
+  /* 34u 在 64px 宽的牌上直接顶到两个角标；缩到 22u 才留得出空隙 */
+  font-size: calc(22 * var(--u));
+  opacity: 0.75;
+}
+/* 牌阵/底牌的牌是压叠的（牌阵每张只露 26u），主牌标签跟着收一档，
+   落在露出的那一条里，不会被右边邻牌盖掉半个字。 */
+.tv4-hand-card--trick .tv4-hc-main-tag,
+.tv4-discard-card .tv4-hc-main-tag {
+  font-size: calc(9 * var(--ut));
+  min-width: calc(11 * var(--u));
+  line-height: 1.2;
+}
+
+/* ── 掉线重连遮罩 ───────────────────────────────────────────────
+ * z-index 取 1200：必须盖在所有浮层之上（框选矩形 999、面板/底栏都更低）。
+ * 断线期间任何点击都发不出去，让玩家隔着遮罩乱点只会以为「点了没反应＝卡死」，
+ * 所以这里故意**吃掉**指针事件（不设 pointer-events: none）。
+ */
+.tv4-reconnect-mask {
+  position: absolute; inset: 0;
+  z-index: 1200;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(2px);
+  animation: tv4-reconnect-in 0.18s ease-out;
+}
+
+.tv4-reconnect-card {
+  display: flex; flex-direction: column; align-items: center;
+  gap: calc(10 * var(--u));
+  max-width: 80%;
+  padding: calc(20 * var(--u)) calc(28 * var(--u));
+  background: var(--tv4-panel-bg);
+  border: 1px solid var(--tv4-line-gold);
+  border-radius: calc(14 * var(--u));
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.5);
+  text-align: center;
+}
+
+.tv4-reconnect-spinner {
+  width: calc(28 * var(--u)); height: calc(28 * var(--u));
+  border: calc(3 * var(--u)) solid rgba(250, 204, 21, 0.25);
+  border-top-color: #FACC15;
+  border-radius: 50%;
+  animation: tv4-reconnect-spin 0.8s linear infinite;
+}
+
+.tv4-reconnect-title {
+  color: #FEF08A;
+  font-size: calc(16 * var(--ut)); font-weight: 700;
+}
+
+.tv4-reconnect-tip {
+  color: #E5E7EB;
+  font-size: calc(12.5 * var(--ut));
+  opacity: 0.85;
+}
+
+/* 座位保留倒计时。数字用等宽，避免秒数变化时整行左右跳动。 */
+.tv4-reconnect-count {
+  color: #E5E7EB;
+  font-size: calc(12.5 * var(--ut));
+  font-variant-numeric: tabular-nums;
+}
+.tv4-reconnect-count b {
+  color: #FEF08A;
+  font-size: calc(15 * var(--ut));
+  font-weight: 900;
+}
+/* 最后 15 秒转红：再不回来就要按逃跑处理了 */
+.tv4-reconnect-count.is-urgent b { color: #FCA5A5; }
+
+@keyframes tv4-reconnect-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes tv4-reconnect-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 无障碍/省电：系统开了「减少动态效果」就别转圈，静态提示同样能传达信息 */
+@media (prefers-reduced-motion: reduce) {
+  .tv4-reconnect-spinner { animation: none; }
+  .tv4-reconnect-mask { animation: none; }
+}
+
+/* ── 叫主/叫分归属标注 ─────────────────────────────────
+   顶栏主牌旁边的「叫·XX / 抢·XX / 翻底定主」小字，
+   以及记录面板里的座位号标签、不叫记录的压暗态。 */
+.tv4-score-main-by {
+  max-width: calc(96 * var(--u));
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  padding: 1px calc(6 * var(--u));
+  border-radius: calc(4 * var(--u));
+  background: rgba(250, 204, 21, 0.16);
+  color: #FDE68A;
+  font-size: calc(11 * var(--ut)); font-weight: 700; line-height: 1.5;
+}
+.tv4-panel-seat {
+  margin-left: calc(6 * var(--u)); padding: 1px calc(5 * var(--u));
+  border-radius: calc(4 * var(--u));
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px; font-weight: 600;
+}
+.tv4-panel-list-item.is-dim { opacity: 0.5; }
+/* 扣底选多了：这是唯一一种「点了放入底牌却没反应」的情形，必须显眼提示 */
+.tv4-discard-over {
+  margin-left: calc(8 * var(--u));
+  padding: 1px calc(7 * var(--u));
+  border-radius: calc(5 * var(--u));
+  background: rgba(248, 113, 113, 0.22);
+  color: #FCA5A5;
+  font-size: calc(12 * var(--ut)); font-weight: 700;
+}
+
+/* ── 房间累计战绩 ─────────────────────────────────────
+   一桌人常连打十几把，「打到第几局 / 我一共几级 / 刚那局谁坐庄」
+   要随时能看到。顶栏一个常驻小块（点开进记录面板），
+   记录面板和退房清单里是完整的表。 */
+
+/* 顶栏：第N局 + 我的累计级数。做成按钮，点一下直接开记录面板。 */
+.tv4-score-rounds {
+  display: flex; flex-direction: column; align-items: center;
+  gap: calc(2 * var(--u));
+  padding: 0 calc(10 * var(--u));
+  border-right: 1px solid var(--tv4-line-soft);
+  background: none; border-top: none; border-left: none; border-bottom: none;
+  cursor: pointer;
+  /* 顶栏很挤，这块不许把兄弟元素挤出去 */
+  flex-shrink: 0;
+}
+.tv4-score-rounds .label {
+  color: var(--tv4-text-gold); font-size: calc(12 * var(--ut));
+  font-weight: 700; white-space: nowrap;
+}
+.tv4-score-rounds .value {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: calc(17 * var(--u)); font-weight: 900; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+/* 赢用绿、输用红：级数是唯一能一眼看出"这桌打得怎么样"的数字 */
+.tv4-score-rounds .value.is-up   { color: #86EFAC; }
+.tv4-score-rounds .value.is-down { color: #FCA5A5; }
+.tv4-score-rounds:hover { background: var(--tv4-glass-hover); }
+
+/* 累计成绩表 / 逐局战绩表里的级数（面板内） */
+.tv4-room-level {
+  display: inline-block; min-width: calc(46 * var(--u)); text-align: right;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: calc(14 * var(--ut)); font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.tv4-room-level.is-up   { color: #86EFAC; }
+.tv4-room-level.is-down { color: #FCA5A5; }
+
+/* 坐庄战绩：配角，压暗不抢主 */
+.tv4-room-banker {
+  margin-right: calc(8 * var(--u));
+  color: rgba(255, 255, 255, 0.5);
+  font-size: calc(12 * var(--ut));
+}
+
+/* 我这一行加一层底色，一屏四行里要能立刻找到自己 */
+.tv4-panel-list-item.is-me {
+  background: rgba(250, 204, 21, 0.12);
+  border: 1px solid rgba(250, 204, 21, 0.28);
+}
+.tv4-panel-badge.is-me {
+  background: rgba(250, 204, 21, 0.25); color: #FDE68A;
+}
+
+/* 逐局战绩：局号 + 战果标签 */
+.tv4-round-no {
+  margin-right: calc(6 * var(--u));
+  color: rgba(255, 255, 255, 0.55);
+  font-size: calc(12 * var(--ut)); font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.tv4-round-outcome {
+  padding: 1px calc(6 * var(--u));
+  border-radius: calc(4 * var(--u));
+  font-size: calc(12 * var(--ut)); font-weight: 700;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.75);
+}
+/* 战果按强度分色，扫一列就能看出这桌的走势。
+   代号与 utils/roomRecord.ts 的 outcome 一一对应。 */
+.tv4-round-outcome.is-bald       { background: rgba(248, 113, 113, 0.28); color: #FECACA; }
+.tv4-round-outcome.is-small_bald { background: rgba(251, 146, 60, 0.24);  color: #FED7AA; }
+.tv4-round-outcome.is-hold       { background: rgba(250, 204, 21, 0.20);  color: #FDE68A; }
+.tv4-round-outcome.is-dig        { background: rgba(74, 222, 128, 0.24);  color: #BBF7D0; }
+.tv4-round-outcome.is-over       { background: rgba(96, 165, 250, 0.22);  color: #BFDBFE; }
+.tv4-round-outcome.is-flow_break { background: rgba(255, 255, 255, 0.12); color: rgba(255,255,255,0.6); }
+.tv4-round-detail {
+  margin-right: calc(8 * var(--u));
+  color: rgba(255, 255, 255, 0.55);
+  font-size: calc(12 * var(--ut));
+}
+
+/* ── 退房清单 ─────────────────────────────────────────
+   点「退出房间」先摆这一屏：这桌打了几局、各家几级、逐局战果，
+   确认后才真的离开。误点的代价很大（对局中退出要罚金）。 */
+.tv4-leave-headline {
+  padding: calc(10 * var(--u)) calc(12 * var(--u));
+  margin-bottom: calc(4 * var(--u));
+  background: rgba(250, 204, 21, 0.12);
+  border: 1px solid rgba(250, 204, 21, 0.25);
+  border-radius: calc(10 * var(--u));
+  color: #FDE68A;
+  font-size: calc(16 * var(--ut)); font-weight: 800; text-align: center;
+}
+/* 罚金警告要比普通说明显眼：玩家事后才发现被扣币是最差的体验 */
+.tv4-panel-note.is-warn {
+  background: rgba(248, 113, 113, 0.16);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: #FECACA;
+}
+.tv4-leave-actions {
+  display: flex; gap: calc(10 * var(--u));
+  margin-top: calc(12 * var(--u));
+  /* 按钮必须贴在面板底部不随内容滚动。
+     这两个按钮原来跟「逐局战绩」列表一起待在可滚动的 .tv4-panel-body 里，
+     一桌打满 3 局列表就把它们顶出屏幕（横屏 390px 高时实测 top=409），
+     玩家看到的是一屏战绩却找不到「确认退出」，只能猜要往下滑。 */
+  position: sticky; bottom: 0;
+  /* 负边距 + 等量内边距：把不透明底铺满 body 的左右内边距，
+     否则滚动的文字会从按钮条两侧的缝里透出来 */
+  margin-left: calc(-12 * var(--u)); margin-right: calc(-12 * var(--u));
+  margin-bottom: calc(-14 * var(--u));
+  padding: calc(10 * var(--u)) calc(12 * var(--u)) calc(14 * var(--u));
+  background: var(--tv4-panel-bg);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.tv4-leave-btn {
+  flex: 1;
+  padding: calc(11 * var(--u)) 0;
+  border-radius: calc(10 * var(--u));
+  border: 1px solid var(--tv4-line-gold-soft);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--tv4-text);
+  font-size: calc(15 * var(--ut)); font-weight: 800;
+  cursor: pointer;
+}
+.tv4-leave-btn:hover { background: rgba(255, 255, 255, 0.14); }
+/* 「确认退出」是不可逆动作，用危险色，且不做成默认视觉焦点 */
+.tv4-leave-btn.is-danger {
+  background: rgba(248, 113, 113, 0.2);
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #FECACA;
+}
+.tv4-leave-btn.is-danger:hover { background: rgba(248, 113, 113, 0.3); }
+
+/* ===== 座位上的本桌累计级数 =====
+   级数是这个游戏唯一的输赢单位，一桌人连打十几把，「谁领先、我落后几级」
+   是每手牌都在权衡的事（决定要不要冒险抢庄）。原来只有顶栏显示"我"的累计，
+   别人的要点开记录面板才看得到 —— 等于把最该常驻的数字藏进了二级菜单。
+
+   配色上刻意和「先出 / 出牌中」那些流程标签区分开：那些是"现在该干什么"，
+   这个是"战况"，不能抢流程标签的注意力，所以用暗底描边而不是实心亮色。 */
+.tv4-seat-level {
+  margin-top: calc(3 * var(--u));
+  display: inline-block;
+  padding: 0 calc(6 * var(--u));
+  border-radius: calc(6 * var(--u));
+  background: rgba(15, 26, 46, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  color: rgba(226, 232, 240, 0.9);
+  font-size: calc(10.5 * var(--ut));
+  font-weight: 900;
+  line-height: 1.5;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-family: "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif;
+}
+/* 赢金、输红：一眼扫过全桌就知道谁在赢 */
+.tv4-seat-level.is-up {
+  border-color: rgba(253, 230, 138, 0.75);
+  color: #FDE68A;
+  background: rgba(120, 83, 4, 0.5);
+}
+.tv4-seat-level.is-down {
+  border-color: rgba(248, 113, 113, 0.6);
+  color: #FCA5A5;
+  background: rgba(90, 24, 24, 0.5);
+}

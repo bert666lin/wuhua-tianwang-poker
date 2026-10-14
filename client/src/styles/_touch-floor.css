@@ -1,0 +1,91 @@
+/* ============================================================
+   全站触控下限兜底
+   ------------------------------------------------------------
+   根因：本项目所有尺寸都写成 calc(N * var(--u))，而 --u 在手机横屏
+   被 clamp 压到 ≈0.63px（tokens.css: clamp(0.62px, 100vw/600, 0.92px)）。
+   于是设计稿里 40px 的按钮实际只有 25px、44px 的输入框只有 28px，
+   全面低于可用触控标准。
+
+   这里不去逐个改上百条规则（既漏又容易改坏视觉比例），
+   而是统一给"可点元素"加最小命中区。只加下限、不改上限，
+   所以竖屏/平板上 --u 变大时完全不受影响。
+   ============================================================ */
+
+/* 牌桌(.tv4-*)已按像素逐个调过并实测通过，不纳入本兜底，避免动到既有布局。 */
+
+/* 通用：所有按钮/链接/输入控件的最小高度 */
+button:not([class*='tv4-']),
+[role='button']:not([class*='tv4-']),
+a.btn,
+input:not([type='checkbox']):not([type='radio']),
+textarea,
+select {
+  min-height: 32px;
+}
+
+/* 圆形图标按钮：高宽都要，否则会被压成椭圆（同样只限可交互标签） */
+button[class$='-back'],
+button[class*='-back '],
+button[class$='-close'],
+button[class*='-close '],
+button[class$='-refresh'],
+button[class$='-hud-icon'],
+button[class*='-hud-icon '],
+[role='button'][class$='-back'],
+[role='button'][class$='-close'] {
+  min-width: 32px;
+  min-height: 32px;
+}
+
+/* 主操作按钮给更高的下限（这些是高频、误触代价大的按钮）
+   注意：必须限定 button/a/[role=button]，否则会命中按钮内部的 <span>，
+   把内联文字变成 flex 盒子并撑高，导致文字换行错位。 */
+button[class*='-btn-primary'],
+button[class*='-submit'],
+button[class*='quick-btn'],
+button[class*='-cta'],
+a[class*='-cta'],
+[role='button'][class*='-btn-primary'],
+[role='button'][class*='quick-btn'] {
+  min-height: 38px;
+}
+
+/* iOS：输入框字号 <16px 时聚焦会强制缩放整页，把弹窗顶出可视区 */
+input:not([type='checkbox']):not([type='radio']),
+textarea,
+select {
+  font-size: max(1em, 16px);
+}
+
+/* checkbox / radio 本身很小，扩大其可点区域而不改视觉大小 */
+input[type='checkbox'],
+input[type='radio'] {
+  min-height: 0;           /* 撤销上面的 32px，避免被拉变形 */
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+label:has(> input[type='checkbox']),
+label:has(> input[type='radio']) {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* 窄按钮：只有图标/单字的按钮容易横向过窄（点不准） */
+button[class*='-icon-btn'],
+button[class*='-balance-add'],
+button[class*='-hall-tab'],
+[role='button'][class*='-icon-btn'] {
+  min-width: 32px;
+}
+
+/* 纯文字链（协议、条款、忘记密码…）：用纵向 padding 撑命中区，不改视觉行高 */
+a:not(.btn),
+button[class*='-link'],
+button[class*='agree'],
+button[class*='-doc'] {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+}

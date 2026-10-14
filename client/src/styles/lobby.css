@@ -1,0 +1,26 @@
+/* ===== Lobby 入口 v5 ===== */
+
+@import './tokens.css';
+@import './lobby-base.css';
+@import './lobby-modes.css';
+@import './lobby-play.css';
+@import './lobby-nav.css';
+@import './lobby-responsive.css';
+
+/* 大厅错误提示：创建/加入房间失败时的反馈 */
+.lobby-toast {
+  position: fixed;
+  top: calc(78 * var(--u)); left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  max-width: min(calc(560 * var(--u)), 88vw);
+  padding: calc(11 * var(--u)) calc(20 * var(--u));
+  background: rgba(127, 29, 29, 0.96);
+  border: 1px solid #F87171;
+  border-radius: calc(12 * var(--u));
+  color: #FEE2E2;
+  font-size: calc(14 * var(--ut)); font-weight: 600;
+  text-align: center;
+  box-shadow: 0 8px 26px rgba(0,0,0,0.45);
+  cursor: pointer;
+}

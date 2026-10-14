@@ -1,0 +1,94 @@
+/* ===== RulesModal v3 蓝+金 ===== */
+
+@import './tokens.css';
+
+.rules-backdrop {
+  position: fixed; inset: 0; z-index: 200;
+  display: grid; place-items: center;
+  padding: calc(12 * var(--u));
+  background: radial-gradient(circle at 50% 30%, rgba(0,0,0,0.4), rgba(0,0,0,0.78));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: rules-backdrop-in 0.3s ease-out;
+}
+@keyframes rules-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+
+.rules-modal {
+  position: relative;
+  width: min(calc(640 * var(--u)), 96vw);
+  max-height: 90vh;
+  display: flex; flex-direction: column;
+  background: var(--grad-card);
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-3), inset 0 1px 0 rgba(232, 211, 168, 0.18);
+  overflow: hidden;
+  animation: rules-modal-in 0.4s var(--ease-spring) both;
+}
+@keyframes rules-modal-in {
+  0% { transform: perspective(800px) rotateX(-12deg) scale(0.85); opacity: 0; }
+  100% { transform: perspective(800px) rotateX(0) scale(1); opacity: 1; }
+}
+
+.rules-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: calc(16 * var(--u)) calc(22 * var(--u));
+  background: linear-gradient(180deg, rgba(110, 131, 181, 0.18) 0%, transparent 100%);
+  border-bottom: 1px solid var(--c-border-soft);
+}
+.rules-title {
+  font-size: calc(18 * var(--ut)); font-weight: 900;
+  color: var(--c-text-gold);
+  letter-spacing: 0.1em;
+  display: inline-flex; align-items: center; gap: calc(8 * var(--u));
+}
+.rules-close {
+  width: calc(30 * var(--u)); height: calc(30 * var(--u));
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--c-bg-glass);
+  border: 1px solid var(--c-border-soft);
+  border-radius: 50%;
+  color: var(--c-text);
+  font-size: calc(18 * var(--ut)); cursor: pointer;
+  transition: all var(--t-fast);
+}
+.rules-close:hover { color: var(--c-text-gold); border-color: var(--c-border); }
+
+.rules-body {
+  flex: 1; overflow-y: auto;
+  padding: calc(20 * var(--u)) calc(22 * var(--u));
+  color: var(--c-text-mute);
+  font-size: calc(14 * var(--ut));
+  line-height: 1.7;
+}
+.rules-body h3 {
+  font-size: calc(14 * var(--ut)); font-weight: 900;
+  color: var(--c-text-gold);
+  margin: calc(14 * var(--u)) 0 calc(6 * var(--u));
+  letter-spacing: 0.08em;
+  display: inline-flex; align-items: center; gap: calc(6 * var(--u));
+}
+.rules-body h3:first-child { margin-top: 0; }
+.rules-body p { margin: calc(4 * var(--u)) 0; }
+.rules-body strong { color: var(--c-text); }
+.rules-body ul { padding-left: calc(18 * var(--u)); margin: calc(6 * var(--u)) 0; }
+.rules-body li { margin: calc(3 * var(--u)) 0; }
+.rules-body code {
+  display: inline-block;
+  padding: 1px calc(6 * var(--u));
+  background: var(--c-bg-glass);
+  border: 1px solid var(--c-border-soft);
+  border-radius: calc(3 * var(--u));
+  color: var(--c-text-gold);
+  font-family: var(--font-mono);
+  font-size: calc(12 * var(--ut));
+}
+
+/* 规则里的重点提醒（如"主副不能混组"这种最容易搞错的点） */
+.rules-warn {
+  padding: calc(8 * var(--u)) calc(10 * var(--u));
+  margin: calc(6 * var(--u)) 0;
+  background: rgba(232, 211, 168, 0.08);
+  border-left: 3px solid var(--c-gold-400);
+  border-radius: calc(4 * var(--u));
+}

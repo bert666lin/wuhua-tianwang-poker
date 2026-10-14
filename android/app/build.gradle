@@ -1,0 +1,139 @@
+apply plugin: 'com.android.application'
+
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+/**
+ * ===== versionCode 随发版自增 =====
+ *
+ * 为什么必须自增：Android 判断「是不是新版本」只看 versionCode。
+ * 这个值原来写死成 1，于是每次重新打包出来的都还是"第 1 版"，
+ * 用户点更新会被系统当成同一个版本而拒装（提示「应用未安装」），
+ * 只能先卸载 —— 卸载就丢本地登录态。所以这是发版的硬门槛。
+ *
+ * 取值口径：git 提交数（git rev-list --count HEAD）。
+ * 选它的理由是不需要任何手工维护、也不需要往仓库里存一个计数文件：
+ * 只要有新提交它就单调变大，而"发版必然带着新提交"。
+ *
+ * 三条防线，任何一条不满足就【让构建失败】而不是退回 1 ——
+ * 静默退回 1 正是我们要修的那个 bug，绝不能留这条后路：
+ *   1) 环境变量 TIANWANG_VERSION_CODE 可强制指定（CI / 应急发版用）
+ *   2) 浅克隆（shallow clone）直接拒绝：它的提交数是被截断的小数字，
+ *      拿去当 versionCode 会比线上已发布的版本更小，老用户反而更新不了
+ *   3) 拿不到 git 信息就报错，并把解决办法写在报错里
+ */
+def resolveVersionCode = { ->
+    // 1) 显式指定优先
+    def forced = System.getenv('TIANWANG_VERSION_CODE')
+    if (forced != null && forced.trim().isInteger() && (forced.trim() as int) > 0) {
+        println "[versionCode] 使用环境变量 TIANWANG_VERSION_CODE=${forced.trim()}"
+        return forced.trim() as int
+    }
+
+    def runGit = { List<String> args ->
+        try {
+            def proc = (['git'] + args).execute(null, rootProject.projectDir)
+            def out = new StringBuilder()
+            def err = new StringBuilder()
+            proc.consumeProcessOutput(out, err)
+            proc.waitForOrKill(15000)
+            return proc.exitValue() == 0 ? out.toString().trim() : null
+        } catch (Exception ignored) {
+            return null
+        }
+    }
+
+    // 2) 浅克隆会少算提交数 -> versionCode 倒退 -> 老用户装不上新包
+    def shallow = runGit(['rev-parse', '--is-shallow-repository'])
+    if (shallow == 'true') {
+        throw new GradleException(
+            'versionCode 取自 git 提交数，但当前是浅克隆（shallow clone），提交数被截断，\n' +
+            '        直接用会让 versionCode 比线上已发布的版本更小，老用户反而无法更新。\n' +
+            '        解决：先 `git fetch --unshallow`，或用 TIANWANG_VERSION_CODE=<整数> 指定。')
+    }
+
+    // 3) 提交数
+    def count = runGit(['rev-list', '--count', 'HEAD'])
+    if (count == null || !count.isInteger() || (count as int) <= 0) {
+        throw new GradleException(
+            'versionCode 取自 git 提交数，但读不到 git 信息（不是 git 仓库，或没装 git）。\n' +
+            '        不会退回 versionCode=1：那样打出来的包用户装不上（会被当成同一版本拒装）。\n' +
+            '        解决：在 git 仓库里构建，或用 TIANWANG_VERSION_CODE=<整数> 指定。')
+    }
+    println "[versionCode] git 提交数 = ${count}"
+    return count as int
+}
+
+def appVersionCode = resolveVersionCode()
+/* versionName 是给人看的那个版本号，跟着 versionCode 一起动。
+ * 带上数字才有意义 —— 用户报障时「我装的是 1.0」等于没有信息，
+ * 而下载页和 apk-info.json 显示的就是这个字段。 */
+def appVersionName = "1.0.${appVersionCode}"
+
+android {
+    namespace "cn.geju8.tianwang"
+    compileSdk rootProject.ext.compileSdkVersion
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
+
+    defaultConfig {
+        applicationId "cn.geju8.tianwang"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode appVersionCode
+        versionName appVersionName
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

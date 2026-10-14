@@ -1,0 +1,1329 @@
+/* ===== Settlement v3 深度重做 =====
+ * 4 玩家等级卡 + 大号 hero + 段位变化 + 统计 + 4 按钮
+ * 蓝金玻璃态 + 金粉/灰屑粒子 + 段位提升爆光
+ */
+
+@import './tokens.css';
+
+.settle-backdrop {
+  position: fixed; inset: 0; z-index: 300;
+  display: grid; place-items: center;
+  padding: calc(12 * var(--u));
+  background: radial-gradient(circle at 50% 30%, rgba(0,0,0,0.4), rgba(0,0,0,0.78));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: settle-backdrop-in 0.3s ease-out;
+}
+@keyframes settle-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+
+.settle-panel {
+  position: relative;
+  width: min(calc(560 * var(--u)), 96vw);
+  max-height: 92vh;
+  color: var(--c-text);
+  background: var(--grad-card);
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-deep), inset 0 1px 0 rgba(232, 211, 168, 0.2);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  transform-origin: 50% 40%;
+  transform: perspective(800px) rotateY(-90deg) scale(0.6);
+  opacity: 0;
+  transition: transform 0.55s var(--ease-spring), opacity 0.4s ease-out;
+}
+.settle-panel.is-hero {
+  transform: perspective(800px) rotateY(0deg) scale(1);
+  opacity: 1;
+}
+.settle-panel.is-content { /* 触发子元素动画 */ }
+
+@keyframes settle-panel-in {
+  0% { transform: perspective(800px) rotateY(-90deg) scale(0.6); opacity: 0; }
+  60% { transform: perspective(800px) rotateY(15deg) scale(1.04); opacity: 1; }
+  100% { transform: perspective(800px) rotateY(0) scale(1); }
+}
+
+.settle-hero {
+  position: relative;
+  flex: 0 0 auto;
+  padding: calc(22 * var(--u)) calc(18 * var(--u)) calc(16 * var(--u));
+  text-align: center;
+  background: linear-gradient(180deg, rgba(110, 131, 181, 0.18) 0%, transparent 100%);
+  border-bottom: 1px solid var(--c-border-soft);
+  overflow: hidden;
+}
+.settle-panel.settle-win .settle-hero {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(232, 211, 168, 0.25) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(110, 131, 181, 0.12) 0%, transparent 100%);
+}
+.settle-panel.settle-lose .settle-hero {
+  background: linear-gradient(180deg, rgba(110, 80, 80, 0.18) 0%, rgba(15, 26, 46, 0.5) 100%);
+}
+
+.settle-hero-rays {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  opacity: 0; transition: opacity 0.4s;
+}
+.settle-panel.settle-win .settle-hero-rays { opacity: 1; animation: settle-rays-turn 12s linear infinite; }
+@keyframes settle-rays-turn { to { transform: rotate(360deg); } }
+
+.settle-close {
+  position: absolute; top: calc(10 * var(--u)); right: calc(10 * var(--u));
+  width: calc(30 * var(--u)); height: calc(30 * var(--u));
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--c-bg-glass);
+  border: 1px solid var(--c-border-soft);
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 5;
+  transition: all var(--t-fast);
+  padding: 0;
+  color: var(--c-text-mute);
+}
+.settle-close:hover { background: rgba(110, 131, 181, 0.18); color: var(--c-text-gold); }
+
+.settle-result-tag {
+  position: relative;
+  display: inline-flex; align-items: center; gap: calc(6 * var(--u));
+  padding: calc(5 * var(--u)) calc(16 * var(--u));
+  border-radius: var(--r-pill);
+  font-size: calc(13 * var(--ut)); font-weight: 900;
+  letter-spacing: 0.15em;
+  border: 1.5px solid currentColor;
+  animation: settle-tag-in 0.6s 0.3s var(--ease-spring) both;
+}
+@keyframes settle-tag-in {
+  from { transform: scale(0.3) rotate(-15deg); opacity: 0; }
+  to { transform: scale(1) rotate(0); opacity: 1; }
+}
+.settle-win .settle-result-tag { color: var(--c-text-gold); background: var(--grad-gold-soft); box-shadow: var(--c-glow-gold); }
+.settle-lose .settle-result-tag { color: var(--c-red-400); background: rgba(200, 49, 43, 0.18); }
+.settle-result-tag-icon { display: inline-flex; }
+
+.settle-result-title {
+  position: relative;
+  margin: calc(10 * var(--u)) 0 0;
+  font-size: calc(18 * var(--ut));
+  font-weight: 900;
+  color: var(--c-text);
+  letter-spacing: 0.08em;
+  text-shadow: 0 2px 6px rgba(0,0,0,0.5);
+  animation: settle-title-in 0.5s 0.5s var(--ease-out) both;
+}
+@keyframes settle-title-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* === 大号等级 + 变化 === */
+.settle-level-bigblock {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  gap: var(--sp-3);
+  margin: calc(12 * var(--u)) 0 calc(10 * var(--u));
+  animation: settle-level-in 0.7s 0.7s var(--ease-spring) both;
+}
+@keyframes settle-level-in {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+.settle-level-num-wrap {
+  display: inline-flex; align-items: baseline; gap: 2px;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+  font-size: calc(44 * var(--u));
+  color: var(--c-text);
+  text-shadow: 0 0 12px rgba(232, 211, 168, 0.5), 0 2px 0 rgba(0,0,0,0.4);
+}
+.settle-win .settle-level-num { color: var(--c-text-gold); }
+.settle-lose .settle-level-num { color: var(--c-text); opacity: 0.85; }
+
+.settle-level-delta {
+  display: inline-flex; align-items: center; gap: calc(4 * var(--u));
+  padding: calc(6 * var(--u)) calc(12 * var(--u));
+  border-radius: var(--r-pill);
+  font-size: calc(14 * var(--ut));
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+  border: 1px solid;
+}
+.settle-level-delta.delta-up { color: var(--c-green-400); background: rgba(91, 174, 122, 0.2); border-color: rgba(125, 204, 151, 0.4); box-shadow: 0 0 10px rgba(125, 204, 151, 0.3); }
+.settle-level-delta.delta-down { color: var(--c-red-400); background: rgba(200, 49, 43, 0.2); border-color: rgba(229, 90, 78, 0.4); }
+.settle-level-delta.delta-zero { color: var(--c-text-mute); background: var(--c-bg-glass); border-color: var(--c-border-soft); }
+.settle-level-delta-label { font-size: 10px; opacity: 0.8; }
+.settle-level-delta-num { font-size: calc(16 * var(--ut)); }
+.settle-level-delta-icon { font-size: calc(14 * var(--ut)); line-height: 1; }
+
+/* === 段位变化横条 === */
+.settle-rank-strip {
+  display: flex; align-items: stretch; justify-content: center;
+  gap: calc(8 * var(--u));
+  margin: calc(4 * var(--u)) 0 0;
+  animation: settle-rank-strip-in 0.6s 0.9s var(--ease-out) both;
+}
+@keyframes settle-rank-strip-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.settle-rank-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  min-width: calc(78 * var(--u));
+  padding: calc(6 * var(--u)) calc(8 * var(--u));
+  background: rgba(15, 26, 46, 0.4);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--r-sm);
+}
+.settle-rank-cell-label {
+  font-size: 9px;
+  color: var(--c-text-dim);
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+.settle-rank-cell-badge {
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: 2px calc(8 * var(--u));
+  font-size: calc(12 * var(--ut));
+  font-weight: 900;
+  border-radius: var(--r-pill);
+  letter-spacing: 0.05em;
+  border: 1px solid;
+}
+.settle-rank-cell-badge.bronze { background: linear-gradient(180deg, #E3C4A2 0%, #C49A6A 100%); color: var(--c-text-on-gold); border-color: #6E5234; }
+.settle-rank-cell-badge.silver { background: linear-gradient(180deg, #E4EAF4 0%, #B3C0DA 100%); color: #1A2440; border-color: #4F6198; }
+.settle-rank-cell-badge.gold   { background: var(--grad-button); color: var(--c-text-on-gold); border-color: var(--c-gold-700); }
+.settle-rank-cell-badge.is-pulsing { animation: rankup-pulse 1.4s var(--ease-out) infinite; }
+@keyframes rankup-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(232, 211, 168, 0.5); }
+  50% { transform: scale(1.06); box-shadow: 0 0 16px 4px rgba(232, 211, 168, 0.3); }
+}
+.settle-rank-cell-score {
+  font-size: 11px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-mute);
+}
+.settle-rank-arrow {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: calc(24 * var(--u));
+  flex: 0 0 auto;
+}
+.settle-rank-arrow-line {
+  width: 100%; height: 2px;
+  background: linear-gradient(90deg, var(--c-text-dim) 0%, var(--c-gold-400) 50%, var(--c-text-dim) 100%);
+  border-radius: 1px;
+}
+
+/* === 4 玩家等级卡 === */
+.settle-players {
+  flex: 0 0 auto;
+  padding: var(--sp-3) var(--sp-3) 0;
+  animation: settle-block-fade 0.5s 0.6s var(--ease-out) both;
+}
+@keyframes settle-block-fade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.settle-block-title {
+  display: flex; align-items: center; gap: calc(6 * var(--u));
+  font-size: calc(12 * var(--ut));
+  font-weight: 800;
+  color: var(--c-text-gold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0 calc(4 * var(--u)) calc(8 * var(--u));
+}
+.settle-block-spacer { flex: 1; }
+.settle-block-title-note {
+  font-size: 10px;
+  color: var(--c-text-dim);
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.05em;
+}
+
+.settle-players-grid {
+  display: grid;
+  gap: calc(6 * var(--u));
+}
+.settle-players-grid.players-3 { grid-template-columns: repeat(3, 1fr); }
+.settle-players-grid.players-4 { grid-template-columns: repeat(4, 1fr); }
+.settle-players-grid.players-5 { grid-template-columns: repeat(5, 1fr); }
+.settle-players-grid.players-6 { grid-template-columns: repeat(3, 1fr); }
+
+.settle-player-card {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: calc(4 * var(--u));
+  padding: calc(10 * var(--u)) calc(6 * var(--u)) calc(8 * var(--u));
+  background: var(--grad-card-soft);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--r-md);
+  text-align: center;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: settle-card-in 0.4s var(--ease-out) forwards;
+  transition: all var(--t-fast);
+}
+@keyframes settle-card-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+.settle-player-card.is-me {
+  border-color: var(--c-gold-400);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(232, 211, 168, 0.2) 0%, transparent 60%),
+    var(--grad-card);
+  box-shadow: var(--c-glow-gold);
+}
+.settle-player-card.is-winner {
+  border-color: var(--c-gold-400);
+  box-shadow: var(--c-glow-gold);
+}
+.settle-player-card.is-loser {
+  opacity: 0.7;
+  filter: saturate(0.5);
+}
+.settle-player-card.is-promoted {
+  border-color: var(--c-gold-300);
+  animation: settle-card-in 0.4s var(--ease-out) forwards, promote-glow 1.6s 0.4s ease-out infinite;
+}
+@keyframes promote-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232, 211, 168, 0.6); }
+  50% { box-shadow: 0 0 20px 4px rgba(232, 211, 168, 0.4); }
+}
+
+.settle-player-crown {
+  position: absolute; top: calc(-8 * var(--u)); left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  filter: drop-shadow(0 0 6px rgba(232, 211, 168, 0.6));
+}
+.settle-player-avatar {
+  position: relative;
+  width: calc(36 * var(--u)); height: calc(36 * var(--u));
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: calc(14 * var(--ut));
+  font-weight: 900;
+  color: var(--c-text-gold);
+  border: 2px solid var(--c-border);
+  box-shadow: var(--sh-1);
+}
+.settle-player-banker-mark {
+  position: absolute; top: calc(-4 * var(--u)); right: calc(-4 * var(--u));
+  /* 圆点要装得下一个 8px 的汉字：14px 外径减掉 1.5px×2 的描边只剩 11px 内容宽，
+     而「庄」在 8px 字号下实际要 8px + 抗锯齿余量，实测被切了 2px。
+     改成 16px 外径 + line-height:1，让汉字完整落在圆里。 */
+  width: calc(16 * var(--u)); height: calc(16 * var(--u));
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--grad-button);
+  color: var(--c-text-on-gold);
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 900;
+  border-radius: 50%;
+  border: 1.5px solid var(--c-bg-deep);
+}
+.settle-player-name {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--c-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  display: flex; align-items: center; gap: calc(3 * var(--u));
+}
+.settle-tag-me {
+  font-size: 8px;
+  background: var(--c-red-500);
+  color: #fff;
+  padding: 0 calc(3 * var(--u));
+  border-radius: 2px;
+  font-style: normal;
+  font-weight: 900;
+}
+.settle-player-level {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+}
+.settle-player-level-num {
+  font-size: calc(16 * var(--ut));
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text);
+  text-shadow: 0 1px 0 rgba(0,0,0,0.4);
+}
+.settle-player-level-num.is-promoted { color: var(--c-text-gold); }
+.settle-player-level-rank {
+  display: inline-flex; align-items: center; gap: calc(3 * var(--u));
+  font-size: 9px;
+  color: var(--c-text-dim);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+.rank-dot {
+  display: inline-block;
+  width: calc(6 * var(--u)); height: calc(6 * var(--u));
+  border-radius: 50%;
+  background: var(--c-gold-400);
+  box-shadow: 0 0 4px var(--c-gold-400);
+}
+.rank-dot.bronze { background: #C8956D; box-shadow: 0 0 4px #C8956D; }
+.rank-dot.silver { background: #B5C2DC; box-shadow: 0 0 4px #B5C2DC; }
+.rank-dot.gold { background: var(--c-gold-300); }
+
+.settle-player-delta {
+  margin-top: 2px;
+  padding: 1px calc(6 * var(--u));
+  font-size: 10px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  border-radius: var(--r-pill);
+  letter-spacing: 0.05em;
+}
+.settle-player-delta.delta-up { background: rgba(91, 174, 122, 0.2); color: var(--c-green-400); }
+.settle-player-delta.delta-down { background: rgba(200, 49, 43, 0.2); color: var(--c-red-400); }
+.settle-player-delta.delta-zero { background: var(--c-bg-glass); color: var(--c-text-dim); }
+
+/* === 滚动区 === */
+.settle-scroll {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: calc(10 * var(--u)) var(--sp-3) var(--sp-3);
+  display: flex; flex-direction: column; gap: calc(10 * var(--u));
+  min-height: 0;
+}
+.settle-scroll::-webkit-scrollbar { width: calc(4 * var(--u)); }
+.settle-scroll::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 2px; }
+
+.settle-dig-banner {
+  display: flex; align-items: center; gap: calc(6 * var(--u));
+  padding: calc(8 * var(--u)) calc(12 * var(--u));
+  background:
+    linear-gradient(90deg, rgba(120, 86, 24, 0.55) 0%, rgba(48, 38, 96, 0.55) 100%);
+  border: 1px solid var(--c-gold-400);
+  border-radius: var(--r-md);
+  font-size: calc(12 * var(--ut));
+  color: var(--c-text);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  animation: settle-dig-in 0.5s var(--ease-out) both;
+  position: relative;
+  overflow: hidden;
+}
+.settle-dig-banner::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(232, 211, 168, 0.15) 50%, transparent 100%);
+  transform: translateX(-100%);
+  animation: settle-dig-shine 2.5s 0.3s ease-in-out infinite;
+}
+@keyframes settle-dig-shine {
+  to { transform: translateX(100%); }
+}
+@keyframes settle-dig-in {
+  from { transform: scaleX(0.8); opacity: 0; }
+  to { transform: scaleX(1); opacity: 1; }
+}
+.settle-dig-icon { display: inline-flex; }
+.settle-dig-strong { color: #FEF3C7; font-weight: 900; text-shadow: 0 1px 2px rgba(0,0,0,0.6); }
+/* 闲家用普通牌收尾拿底牌分：是好事但不是"挖底成功"，用低调的样式区分，
+   不抢挖底成功那条金色 banner 的视觉重量。 */
+.settle-dig-banner.is-plain {
+  background: linear-gradient(90deg, rgba(110, 131, 181, 0.18) 0%, rgba(110, 131, 181, 0.08) 100%);
+  border-color: var(--c-border-soft);
+  font-weight: 500;
+}
+.settle-dig-banner.is-plain::before { animation: none; }
+.settle-dig-muted { color: var(--c-text-mute); font-weight: 400; }
+
+/* 闲家 vs 庄家 */
+.settle-score-compare {
+  display: grid;
+  grid-template-columns: 1fr 28px 1fr;
+  align-items: center;
+  gap: calc(6 * var(--u));
+  padding: calc(10 * var(--u));
+  background: var(--grad-card-soft);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--r-md);
+}
+.settle-score-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: calc(6 * var(--u));
+  background: rgba(15, 26, 46, 0.3);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--r-sm);
+}
+.settle-score-cell.is-hit { border-color: var(--c-green-500); background: rgba(91, 174, 122, 0.15); }
+.settle-score-cell.is-miss { border-color: var(--c-red-500); background: rgba(200, 49, 43, 0.15); }
+.settle-score-cell-label {
+  font-size: 10px;
+  color: var(--c-text-dim);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+.settle-score-cell-value {
+  font-size: calc(22 * var(--ut));
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text);
+  font-family: var(--font-mono);
+  text-shadow: 0 1px 0 rgba(0,0,0,0.4);
+}
+.settle-score-cell.is-hit .settle-score-cell-value { color: var(--c-green-400); }
+.settle-score-cell.is-miss .settle-score-cell-value { color: var(--c-red-400); }
+.settle-score-vs {
+  font-size: 11px;
+  font-weight: 900;
+  color: var(--c-text-dim);
+  text-align: center;
+  font-family: var(--font-mono);
+  letter-spacing: 0.1em;
+}
+
+/* === 统计行 === */
+.settle-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: calc(6 * var(--u));
+}
+.settle-stat-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: calc(8 * var(--u)) calc(4 * var(--u));
+  background: var(--grad-card-soft);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--r-sm);
+  text-align: center;
+}
+.settle-stat-icon { display: inline-flex; }
+.settle-stat-num {
+  font-size: calc(16 * var(--ut));
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text);
+  text-shadow: 0 1px 0 rgba(0,0,0,0.4);
+}
+.settle-stat-num.is-up { color: var(--c-text-gold); }
+.settle-stat-label {
+  font-size: 9px;
+  color: var(--c-text-dim);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+/* === 等级计算 / 分数明细 === */
+.settle-block {
+  background: var(--grad-card-soft);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--r-md);
+  padding: calc(10 * var(--u)) calc(12 * var(--u));
+}
+.settle-block .settle-block-title {
+  padding: 0 0 calc(8 * var(--u));
+}
+.settle-calc-list, .settle-score-list {
+  list-style: none; padding: 0; margin: 0;
+  font-size: calc(12 * var(--ut));
+}
+.settle-calc-list li, .settle-score-list li {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: calc(5 * var(--u)) 0;
+  border-bottom: 1px dashed var(--c-border-soft);
+  gap: calc(8 * var(--u));
+}
+.settle-calc-list li:last-child, .settle-score-list li:last-child { border-bottom: none; }
+.settle-calc-list li strong {
+  font-weight: 900;
+  color: var(--c-text);
+  font-variant-numeric: tabular-nums;
+}
+.settle-calc-list li strong.is-hit { color: var(--c-green-400); }
+.settle-calc-formula { color: var(--c-text-mute); }
+.settle-calc-expr {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--c-text-gold);
+}
+.settle-calc-total strong { color: var(--c-text-gold); }
+.settle-score-list .is-muted { opacity: 0.5; }
+.settle-row-label { color: var(--c-text-mute); font-weight: 600; flex: 1; }
+.settle-row-value {
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text);
+  text-shadow: 0 1px 0 rgba(0,0,0,0.4);
+  flex: 0 0 auto;
+}
+.settle-row-note {
+  flex-basis: 100%;
+  font-size: 10px;
+  color: var(--c-text-dim);
+  margin-top: 2px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.settle-score-total .settle-row-label { color: var(--c-text-gold); font-weight: 800; }
+.settle-score-total .settle-row-value { color: var(--c-text-gold); }
+
+.settle-badge {
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px calc(8 * var(--u));
+  border-radius: var(--r-pill);
+  letter-spacing: 0.05em;
+  border: 1px solid;
+}
+.settle-badge.badge-on { background: rgba(91, 174, 122, 0.2); color: var(--c-green-400); border-color: rgba(125, 204, 151, 0.4); }
+.settle-badge.badge-off { background: var(--c-bg-glass); color: var(--c-text-dim); border-color: var(--c-border-soft); }
+
+/* === 底牌行 === */
+.settle-card-row {
+  display: flex; flex-wrap: wrap; gap: calc(4 * var(--u));
+  padding: calc(4 * var(--u)) 0;
+}
+.settle-card-row.is-dig {
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(232, 211, 168, 0.15) 0%, transparent 70%);
+  border-radius: var(--r-sm);
+  padding: calc(6 * var(--u));
+  margin: calc(-6 * var(--u));
+}
+.settle-cards-empty {
+  font-size: 11px;
+  color: var(--c-text-dim);
+  text-align: center;
+  padding: calc(8 * var(--u)) 0;
+  font-style: italic;
+}
+
+/* === 底部 4 按钮 === */
+.settle-actions {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: auto auto 1fr 1.4fr;
+  gap: calc(6 * var(--u));
+  padding: calc(12 * var(--u)) var(--sp-3) calc(calc(12 * var(--u)) + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, transparent 0%, rgba(15, 26, 46, 0.5) 100%);
+  border-top: 1px solid var(--c-border-soft);
+}
+.settle-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: calc(4 * var(--u));
+  padding: calc(9 * var(--u)) calc(10 * var(--u));
+  border-radius: var(--r-md);
+  font-size: calc(12 * var(--ut));
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  font-family: inherit;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.settle-btn:active { transform: translateY(1px); }
+.settle-btn-ghost {
+  background: transparent;
+  color: var(--c-text-mute);
+  border-color: var(--c-border-soft);
+  padding: calc(9 * var(--u));
+}
+.settle-btn-ghost:hover { color: var(--c-text-gold); border-color: var(--c-border); background: var(--c-bg-glass); }
+.settle-btn-secondary {
+  background: var(--grad-button-secondary);
+  color: var(--c-text);
+  border-color: var(--c-border-soft);
+}
+.settle-btn-secondary:hover { border-color: var(--c-border); }
+.settle-btn-primary {
+  background: var(--grad-button);
+  color: var(--c-text-on-gold);
+  border-color: var(--c-gold-700);
+  box-shadow: var(--c-glow-gold), var(--sh-1);
+}
+.settle-btn-primary:hover { transform: translateY(-1px); box-shadow: var(--c-glow-gold), var(--sh-2); }
+.settle-btn-arrow { font-size: calc(14 * var(--ut)); line-height: 1; font-weight: 900; margin-left: 2px; }
+
+/* === 粒子层 === */
+.settle-particles {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 10;
+}
+.settle-particle {
+  position: absolute;
+  border-radius: 1px;
+  transform: translate(-50%, -50%) rotate(0deg);
+  will-change: transform, opacity;
+}
+@keyframes settle-burst-0 {
+  0%   { transform: translate(-50%, -50%) translate(0, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(-50%, -50%) translate(var(--vx, 0), var(--vy, 0)) rotate(calc(var(--rot, 0deg) * 2)); opacity: 0; }
+}
+@keyframes settle-burst-1 {
+  0%   { transform: translate(-50%, -50%) translate(0, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate(-50%, -50%) translate(calc(var(--vx, 0) * 0.8), calc(var(--vy, 0) * 1.2)) rotate(calc(var(--rot, 0deg) * -1.5)); opacity: 0; }
+}
+@keyframes settle-burst-2 {
+  0%   { transform: translate(-50%, -50%) translate(0, 0) scale(0.6) rotate(0deg); opacity: 1; }
+  100% { transform: translate(-50%, -50%) translate(calc(var(--vx, 0) * 1.2), calc(var(--vy, 0) * 0.9)) scale(1.4) rotate(calc(var(--rot, 0deg) * 1.8)); opacity: 0; }
+}
+@keyframes settle-burst-3 {
+  0%   { transform: translate(-50%, -50%) translate(0, 0) rotate(0deg); opacity: 0.9; }
+  100% { transform: translate(-50%, -50%) translate(calc(var(--vx, 0) * 1.1), calc(var(--vy, 0) * 1.1 + 20px)) rotate(calc(var(--rot, 0deg) * 2.2)); opacity: 0; }
+}
+
+/* === 段位提升爆光 === */
+.settle-rankup-flash {
+  position: absolute; inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+.settle-rankup-ring {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid var(--c-gold-300);
+  opacity: 0;
+  animation: rankup-ring 1.6s var(--ease-out) infinite;
+}
+.settle-rankup-ring-1 { width: calc(100 * var(--u)); height: calc(100 * var(--u)); animation-delay: 0s; }
+.settle-rankup-ring-2 { width: calc(100 * var(--u)); height: calc(100 * var(--u)); animation-delay: 0.4s; }
+.settle-rankup-ring-3 { width: calc(100 * var(--u)); height: calc(100 * var(--u)); animation-delay: 0.8s; }
+@keyframes rankup-ring {
+  0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+}
+
+/* === 响应式 === */
+@media (max-width: 600px) {
+  .settle-panel { width: 96vw; max-height: 95vh; }
+  .settle-hero { padding: calc(16 * var(--u)) calc(12 * var(--u)) calc(12 * var(--u)); }
+  .settle-level-num-wrap { font-size: calc(36 * var(--u)); }
+  .settle-level-delta { font-size: calc(12 * var(--ut)); padding: calc(4 * var(--u)) calc(8 * var(--u)); }
+  .settle-level-delta-num { font-size: calc(14 * var(--ut)); }
+  .settle-rank-cell { min-width: calc(64 * var(--u)); padding: calc(4 * var(--u)) calc(6 * var(--u)); }
+  .settle-rank-cell-badge { font-size: 11px; }
+  .settle-players-grid.players-4 { grid-template-columns: repeat(2, 1fr); }
+  .settle-players-grid.players-5 { grid-template-columns: repeat(3, 1fr); }
+  .settle-players-grid.players-6 { grid-template-columns: repeat(3, 1fr); }
+  .settle-actions { grid-template-columns: 1fr 1fr; gap: calc(6 * var(--u)); }
+  .settle-actions .settle-btn-ghost { grid-column: 1; }
+  .settle-actions .settle-btn-primary { grid-column: 1 / -1; }
+}
+
+@media (max-width: 380px) {
+  .settle-stats-row { grid-template-columns: repeat(2, 1fr); }
+  .settle-score-compare { grid-template-columns: 1fr 1fr; }
+  .settle-score-vs { display: none; }
+}
+
+/* 结算分享面板 */
+/* 分享面板：固定居中浮层。
+   原来是插在操作按钮下方的普通块，手机横屏时结算面板整体可滚动，
+   分享块被推到视口外（实测 top=1072px / 视口高 375px），点了看不到，
+   用户以为"分享没反应"。position:fixed 后不受父容器滚动与高度影响。 */
+.settle-share-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;              /* 高于结算面板与粒子层 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(12 * var(--u, 1px));
+  background: rgba(6, 10, 18, 0.62);
+  backdrop-filter: blur(2px);
+}
+
+.settle-share-panel {
+  width: min(calc(360 * var(--u, 1px)), 88vw);
+  max-height: 84dvh;
+  overflow-y: auto;
+  padding: calc(12 * var(--u, 1px));
+  border-radius: calc(12 * var(--u, 1px));
+  border: 1px solid rgba(232, 211, 168, 0.26);
+  background: linear-gradient(180deg, #1B2437, #141C2B);
+  box-shadow: 0 calc(10 * var(--u, 1px)) calc(30 * var(--u, 1px)) rgba(0, 0, 0, 0.5);
+}
+
+.settle-share-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(8 * var(--u, 1px));
+  margin-bottom: calc(10 * var(--u, 1px));
+  font-size: calc(13 * var(--ut, 1px));
+  font-weight: 700;
+  color: #E8D3A8;
+}
+
+/* 关闭按钮必须真有个「×」字符：之前多次出现"只有框没有×"的问题 */
+.settle-share-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(28 * var(--u, 1px));
+  height: calc(28 * var(--u, 1px));
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(232, 211, 168, 0.32);
+  background: rgba(255, 255, 255, 0.06);
+  color: #E8D3A8;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.settle-share-close:active { transform: scale(0.94); }
+
+/* 手机上关闭按钮要够大好点 */
+@media (pointer: coarse) {
+  .settle-share-close { min-width: 36px; min-height: 36px; font-size: 24px; }
+}
+
+
+/* ============================================================
+   手机横屏（矮屏）— 结算面板
+   根因：面板 max-height 92vh 时总高只有 ~358px，而 hero(200) +
+   玩家栅格(143) + 操作条(44) 已经 387px。原来靠 hero 的 flex-shrink
+   硬压，结果「等级变化 / 段位升降」被 overflow:hidden 裁光。
+   这里改成：整个面板可滚动 + 操作条吸底，同时把 hero 压成横排紧凑版。
+   ============================================================ */
+@media (orientation: landscape) and (max-height: 560px) {
+  .settle-panel {
+    width: min(calc(760 * var(--u)), 94vw);
+    max-height: 94dvh;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .settle-hero,
+  .settle-players,
+  .settle-scroll { flex: 0 0 auto; }
+  /* 内层不再独立滚动，交给面板统一滚，避免"滚动区里套滚动区" */
+  .settle-scroll { overflow: visible; }
+
+  .settle-hero { padding: calc(12 * var(--u)) calc(14 * var(--u)) calc(10 * var(--u)); }
+  .settle-result-title { font-size: calc(15 * var(--ut)); margin-top: calc(2 * var(--u)); }
+
+  /* 等级块 + 段位条并排，省一行高度 */
+  .settle-level-bigblock {
+    display: flex; align-items: center; justify-content: center;
+    gap: calc(10 * var(--u));
+    margin-top: calc(6 * var(--u));
+  }
+  .settle-rank-strip { margin-top: calc(6 * var(--u)); }
+
+  /* 操作条吸底，滚到哪都点得到 */
+  .settle-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    background: linear-gradient(180deg, rgba(26, 20, 56, 0.72) 0%, rgba(22, 17, 47, 0.96) 45%);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding-bottom: calc(8 * var(--u) + env(safe-area-inset-bottom));
+  }
+  /* 粒子/光线是装饰层，面板变成滚动容器后别跟着拉长 */
+  .settle-particles, .settle-hero-rays { display: none; }
+}
+
+/* =========================================================================
+ * Settlement v4：大字战果 + 牌面证据 + 折叠明细
+ * =========================================================================
+ * 排版原则：整个面板只允许有一个「大字」（.settle-headline）。
+ * v3 的问题是四五处都在抢注意力（44px 的级数、大号玩家卡、4 个统计格），
+ * 结果哪个都不突出。这里把层级压死：
+ *   大字（52px）> 战果徽章（15px 强调色）> 分数三联（20px）> 其余（12px）
+ * 改样式时如果想把某个小块放大，先问一句"它比赢几级更重要吗"。 */
+
+/* --- 战果徽章：这局叫什么名字 --- */
+.settle-outcome-badge {
+  position: relative;
+  display: inline-flex; align-items: center; gap: calc(6 * var(--u));
+  padding: calc(5 * var(--u)) calc(16 * var(--u));
+  border-radius: var(--r-pill);
+  font-size: calc(15 * var(--ut));
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  border: 1.5px solid var(--c-gold-400);
+  background: var(--grad-gold-soft);
+  color: var(--c-text-gold);
+  animation: settle-tag-in 0.6s 0.25s var(--ease-spring) both;
+}
+.settle-outcome-badge-icon { display: inline-flex; }
+.settle-outcome-badge-text { text-indent: 0.18em; }
+/* 强度 2（光头 / 挖底）：值得吹一晚上的战果，给持续脉冲 */
+.settle-outcome-badge.intensity-2 {
+  box-shadow: 0 0 18px rgba(232, 211, 168, 0.45);
+  animation:
+    settle-tag-in 0.6s 0.25s var(--ease-spring) both,
+    settle-outcome-pulse 1.8s 0.9s ease-in-out infinite;
+}
+/* 强度 1（小光）：亮但不闪 */
+.settle-outcome-badge.intensity-1 { box-shadow: 0 0 12px rgba(232, 211, 168, 0.3); }
+/* 强度 0（保底成功 / 闲家过庄）：克制，不能让每局都像放礼花 */
+.settle-outcome-badge.intensity-0 {
+  border-color: var(--c-border);
+  background: var(--c-bg-glass);
+  color: var(--c-text-mute);
+  box-shadow: none;
+}
+@keyframes settle-outcome-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 18px rgba(232, 211, 168, 0.45); }
+  50% { transform: scale(1.04); box-shadow: 0 0 26px 4px rgba(232, 211, 168, 0.55); }
+}
+
+/* --- 大字：赢/输几级 --- */
+.settle-headline {
+  display: flex; align-items: baseline; justify-content: center;
+  gap: calc(6 * var(--u));
+  margin: calc(10 * var(--u)) 0 calc(2 * var(--u));
+  animation: settle-level-in 0.7s 0.55s var(--ease-spring) both;
+}
+.settle-headline-verb {
+  font-size: calc(22 * var(--ut));
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+.settle-headline-verb.is-win { color: var(--c-text-gold); }
+.settle-headline-verb.is-lose { color: var(--c-text-mute); }
+.settle-headline-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+  font-size: calc(52 * var(--u));
+  line-height: 1;
+  color: var(--c-text);
+  text-shadow: 0 0 16px rgba(232, 211, 168, 0.5), 0 2px 0 rgba(0,0,0,0.5);
+}
+.settle-win .settle-headline-num { color: var(--c-text-gold); }
+.settle-lose .settle-headline-num { color: var(--c-text); opacity: 0.8; }
+.settle-headline-unit {
+  font-size: calc(20 * var(--ut));
+  font-weight: 900;
+  color: var(--c-text-mute);
+}
+.settle-outcome-detail {
+  font-size: calc(12 * var(--ut));
+  color: var(--c-text-mute);
+  line-height: 1.5;
+  animation: settle-title-in 0.5s 0.7s var(--ease-out) both;
+}
+
+/* --- 分数三联：闲家 / 叫分门槛 / 庄家 --- */
+.settle-scoreline {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: stretch;
+  gap: calc(8 * var(--u));
+  margin: calc(12 * var(--u)) auto 0;
+  max-width: calc(400 * var(--u));
+  animation: settle-rank-strip-in 0.6s 0.85s var(--ease-out) both;
+}
+.settle-scoreline-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: calc(6 * var(--u)) calc(10 * var(--u));
+  background: rgba(15, 26, 46, 0.45);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--r-sm);
+}
+/* 中间那格是判胜负的标尺，用虚线框区分"这不是得分，是门槛" */
+.settle-scoreline-cell.is-target {
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--c-gold-700);
+}
+/* 赢的那一侧点亮：一眼看出是谁达标了 */
+.settle-scoreline-cell.is-hit {
+  border-color: var(--c-gold-400);
+  box-shadow: 0 0 10px rgba(232, 211, 168, 0.25);
+}
+.settle-scoreline-label {
+  font-size: 9px;
+  color: var(--c-text-dim);
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.settle-scoreline-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: calc(20 * var(--ut));
+  font-weight: 900;
+  color: var(--c-text);
+}
+.settle-scoreline-cell.is-hit .settle-scoreline-value { color: var(--c-text-gold); }
+.settle-scoreline-cell.is-target .settle-scoreline-value { color: var(--c-text-mute); }
+.settle-gap-text {
+  margin-top: calc(6 * var(--u));
+  font-size: calc(11 * var(--ut));
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  animation: settle-title-in 0.5s 1s var(--ease-out) both;
+}
+.settle-gap-text.is-over { color: var(--c-green-400); }
+.settle-gap-text.is-under { color: var(--c-text-dim); }
+.settle-hero-reward {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(6 * var(--u));
+  margin: calc(8 * var(--u)) auto 0;
+  padding: calc(5 * var(--u)) calc(12 * var(--u));
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--r-pill);
+  background: rgba(15, 26, 46, 0.48);
+  color: var(--c-text-mute);
+  font-size: calc(11 * var(--ut));
+  font-weight: 700;
+}
+.settle-hero-reward strong {
+  color: var(--c-text);
+  font-size: calc(14 * var(--ut));
+  font-variant-numeric: tabular-nums;
+}
+.settle-hero-reward strong.is-up { color: var(--c-text-gold); }
+.settle-hero-reward strong.is-down { color: #FCA5A5; }
+
+/* --- 牌面证据块 --- */
+.settle-evidence {
+  background: var(--grad-card-soft);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--r-md);
+  padding: calc(10 * var(--u)) calc(12 * var(--u));
+  animation: settle-block-fade 0.5s 0.65s var(--ease-out) both;
+}
+.settle-evidence-head {
+  display: flex; align-items: center; gap: calc(8 * var(--u));
+  flex-wrap: wrap;
+  padding-bottom: calc(6 * var(--u));
+}
+.settle-evidence-title {
+  font-size: calc(12 * var(--ut));
+  font-weight: 800;
+  color: var(--c-text-gold);
+  letter-spacing: 0.1em;
+}
+.settle-evidence-meta {
+  font-size: 10px;
+  color: var(--c-text-dim);
+  font-weight: 600;
+  margin-right: auto;
+}
+.settle-evidence-note {
+  font-size: 10px;
+  color: var(--c-text-dim);
+  line-height: 1.5;
+  margin-top: calc(4 * var(--u));
+}
+
+/* 底牌归谁的徽章 —— 这是玩家最容易算错的一处，必须显眼 */
+.settle-fate-badge {
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px calc(9 * var(--u));
+  border-radius: var(--r-pill);
+  letter-spacing: 0.08em;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.settle-fate-badge.is-taken {
+  background: rgba(91, 174, 122, 0.22);
+  color: var(--c-green-400);
+  border-color: rgba(125, 204, 151, 0.45);
+}
+.settle-fate-badge.is-held {
+  background: rgba(200, 49, 43, 0.18);
+  color: var(--c-red-400);
+  border-color: rgba(229, 90, 78, 0.4);
+}
+
+/* --- 最后一墩：每家一列 --- */
+.settle-lasttrick {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: calc(6 * var(--u));
+}
+.settle-lasttrick-col {
+  min-width: 0;
+  padding: calc(6 * var(--u)) calc(5 * var(--u));
+  background: rgba(15, 26, 46, 0.4);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--r-sm);
+}
+/* 赢下最后一墩的那家点亮：这一墩决定了底牌分归谁 */
+.settle-lasttrick-col.is-winner {
+  border-color: var(--c-gold-400);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(232, 211, 168, 0.18) 0%, transparent 65%),
+    rgba(15, 26, 46, 0.4);
+  box-shadow: 0 0 10px rgba(232, 211, 168, 0.22);
+}
+.settle-lasttrick-col.is-me { border-color: var(--c-blue-400, #6E83B5); }
+.settle-lasttrick-who {
+  display: flex; align-items: center; gap: 3px;
+  flex-wrap: wrap;
+  padding-bottom: calc(4 * var(--u));
+}
+.settle-lasttrick-name {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--c-text-mute);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  max-width: calc(64 * var(--u));
+}
+.settle-lasttrick-col.is-winner .settle-lasttrick-name { color: var(--c-text-gold); }
+/* 最后一墩里每家的牌要能横排放下，所以这里的牌行不换行、允许收缩 */
+.settle-lasttrick-col .settle-card-row {
+  flex-wrap: nowrap;
+  gap: 2px;
+  padding: 0;
+}
+
+.settle-mini-tag {
+  font-size: 8px;
+  font-weight: 900;
+  font-style: normal;
+  padding: 1px 4px;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+  line-height: 1.4;
+}
+.settle-mini-tag.is-banker { background: var(--grad-button); color: var(--c-text-on-gold); }
+.settle-mini-tag.is-me { background: rgba(110, 131, 181, 0.35); color: var(--c-text); }
+.settle-mini-tag.is-win { background: rgba(91, 174, 122, 0.3); color: var(--c-green-400); }
+
+/* --- 叫主与定庄 --- */
+.settle-auction-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(6 * var(--u));
+}
+.settle-auction-fact {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: calc(6 * var(--u)) calc(9 * var(--u));
+  background: rgba(15, 26, 46, 0.4);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--r-sm);
+  min-width: 0;
+}
+.settle-auction-fact-label {
+  font-size: 9px;
+  color: var(--c-text-dim);
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+.settle-auction-fact strong {
+  font-size: calc(13 * var(--ut));
+  font-weight: 900;
+  color: var(--c-text);
+  display: flex; flex-direction: column; gap: 1px;
+}
+/* 「是谁叫的」是本次改动的核心诉求，不能缩成看不见的灰字 */
+.settle-auction-fact-by {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--c-text-gold);
+  letter-spacing: 0.03em;
+}
+.settle-auction-list {
+  list-style: none; padding: 0; margin: 0;
+  font-size: calc(11 * var(--ut));
+}
+.settle-auction-list li {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: calc(8 * var(--u));
+  padding: calc(4 * var(--u)) 0;
+  border-bottom: 1px dashed var(--c-border-soft);
+}
+.settle-auction-list li:last-child { border-bottom: none; }
+.settle-auction-list li.is-pass { opacity: 0.5; }
+.settle-auction-who {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--c-text-mute); font-weight: 700;
+}
+.settle-auction-seat {
+  font-style: normal;
+  font-size: 9px;
+  color: var(--c-text-dim);
+  background: var(--c-bg-glass);
+  border-radius: 3px;
+  padding: 0 3px;
+}
+.settle-auction-list li.is-key .settle-auction-what { color: var(--c-text-gold); font-weight: 800; }
+.settle-auction-what { color: var(--c-text-mute); font-weight: 700; }
+
+/* --- 折叠明细 --- */
+.settle-fold {
+  background: var(--grad-card-soft);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  animation: settle-block-fade 0.5s 0.75s var(--ease-out) both;
+}
+.settle-fold-head {
+  display: flex; align-items: center; gap: calc(6 * var(--u));
+  padding: calc(9 * var(--u)) calc(12 * var(--u));
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+/* 去掉 <summary> 的原生三角，用自己的箭头（原生三角在 iOS 上样式不可控） */
+.settle-fold-head::-webkit-details-marker { display: none; }
+.settle-fold-head::marker { content: ''; }
+.settle-fold-arrow {
+  display: inline-flex;
+  transition: transform var(--t-fast);
+}
+.settle-fold[open] .settle-fold-arrow { transform: rotate(90deg); }
+.settle-fold-title {
+  font-size: calc(12 * var(--ut));
+  font-weight: 800;
+  color: var(--c-text-gold);
+  letter-spacing: 0.08em;
+}
+.settle-fold-note {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--c-text-dim);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.settle-fold-body {
+  padding: 0 calc(12 * var(--u)) calc(10 * var(--u));
+  display: flex; flex-direction: column; gap: calc(8 * var(--u));
+}
+.settle-fold .settle-fold {
+  /* 嵌套折叠（叫牌过程在证据块里）不再画一层框，否则层层套框很脏 */
+  background: transparent;
+  border: none;
+  animation: none;
+}
+.settle-fold .settle-fold .settle-fold-head { padding-left: 0; padding-right: 0; }
+.settle-fold .settle-fold .settle-fold-body { padding-left: 0; padding-right: 0; }
+.settle-evidence .settle-fold {
+  background: transparent;
+  border: none;
+  animation: none;
+  margin-top: calc(4 * var(--u));
+}
+.settle-evidence .settle-fold .settle-fold-head { padding: calc(6 * var(--u)) 0 0; }
+.settle-evidence .settle-fold .settle-fold-body { padding: calc(4 * var(--u)) 0 0; }
+
+.settle-calc-total strong.is-up { color: var(--c-green-400); }
+.settle-calc-total strong.is-down { color: var(--c-red-400); }
+
+/* 折叠里的等级卡不需要再放大，压到最小可读尺寸 */
+.settle-fold .settle-players-grid { gap: calc(5 * var(--u)); }
+.settle-fold .settle-player-card {
+  padding: calc(7 * var(--u)) calc(4 * var(--u)) calc(6 * var(--u));
+  animation: none;
+  opacity: 1;
+  transform: none;
+}
+.settle-fold .settle-player-level-num { font-size: calc(14 * var(--ut)); }
+.settle-fold .settle-stats-row { grid-template-columns: repeat(3, 1fr); }
+.settle-fold .settle-rank-strip { animation: none; }
+
+/* 窄屏（横屏手机 390px 高）：最后一墩改成两行，避免每列窄到看不清牌 */
+@media (max-width: 560px) {
+  .settle-headline-num { font-size: calc(44 * var(--u)); }
+  .settle-lasttrick {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .settle-auction-summary { grid-template-columns: 1fr; }
+}
+
+/* --- 本桌累计 ---
+   结算面板是全屏遮罩，顶栏的「记录」按钮点不到，而结算这一刻恰恰最想问
+   「我们打了几把、我一共输赢几级」。所以把累计战绩搬进结算页一份。
+   数据口径与顶栏/退房清单同源（utils/roomRecord 的 standings）。 */
+.settle-roomtally-list {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: calc(4 * var(--u));
+}
+.settle-roomtally-row {
+  display: flex; align-items: center; gap: calc(8 * var(--u));
+  padding: calc(5 * var(--u)) calc(8 * var(--u));
+  border-radius: var(--r-sm);
+  background: rgba(15, 26, 46, 0.35);
+  border: 1px solid transparent;
+}
+/* 「我」那一行要一眼找得到：一桌 4~6 人，逐行找自己名字很费劲 */
+.settle-roomtally-row.is-me {
+  background: rgba(110, 131, 181, 0.16);
+  border-color: var(--c-border-soft);
+}
+.settle-roomtally-rank {
+  flex: 0 0 auto;
+  width: calc(16 * var(--u)); height: calc(16 * var(--u));
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: rgba(110, 131, 181, 0.22);
+  font-size: 9px; font-weight: 900;
+  color: var(--c-text-mute);
+}
+.settle-roomtally-row:first-child .settle-roomtally-rank {
+  background: var(--grad-button); color: var(--c-text-on-gold);
+}
+.settle-roomtally-name {
+  display: inline-flex; align-items: center; gap: calc(4 * var(--u));
+  font-size: calc(11 * var(--ut)); font-weight: 700;
+  color: var(--c-text);
+  min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.settle-roomtally-banker {
+  margin-left: auto;
+  font-size: 9px; color: var(--c-text-dim); font-weight: 600;
+  white-space: nowrap;
+}
+.settle-roomtally-level {
+  flex: 0 0 auto;
+  font-size: calc(12 * var(--ut)); font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text-mute);
+  min-width: calc(44 * var(--u)); text-align: right;
+}
+.settle-roomtally-level.is-up { color: var(--c-green-400); }
+.settle-roomtally-level.is-down { color: var(--c-red-400); }
+
+/* --- 「查看结算」回位按钮 ---
+   结算面板可以用 ✕ 收起来回牌桌复盘最后一墩，收起后必须有路回去，
+   否则玩家就再也找不到「下一局」按钮了（只能退房重进）。
+   固定在底部中间，避开顶栏那排按钮。 */
+.settle-collapsed-actions {
+  position: fixed;
+  left: 50%; bottom: calc(10 * var(--u));
+  transform: translateX(-50%);
+  z-index: 240;
+  display: flex;
+  gap: calc(8 * var(--u));
+  animation: settle-reopen-in 0.3s var(--ease-out) both;
+}
+.settle-reopen,
+.settle-next-collapsed {
+  padding: calc(7 * var(--u)) calc(18 * var(--u));
+  border-radius: var(--r-pill);
+  border: 1px solid var(--c-gold-500);
+  font-size: calc(12 * var(--ut)); font-weight: 900;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  box-shadow: 0 calc(3 * var(--u)) calc(12 * var(--u)) rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+}
+.settle-next-collapsed { background: var(--grad-button); color: var(--c-text-on-gold); }
+.settle-reopen { background: rgba(15, 26, 46, 0.92); color: var(--c-text-gold); }
+@keyframes settle-reopen-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(calc(8 * var(--u))); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}

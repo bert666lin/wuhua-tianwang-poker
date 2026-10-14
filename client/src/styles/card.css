@@ -1,0 +1,414 @@
+/* ===== 扑克牌 v5 — 翡翠国潮版 =====
+ * 设计原则：实体纸牌质感——暖白底、金边、纹理、精细阴影
+ * 特色：主牌金边强化 / 天王金红双色 / 分数牌徽标 / 精细立体阴影
+ */
+
+.poker-card {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  justify-content: space-between;
+  width: var(--card-w, calc(68 * var(--u)));
+  height: var(--card-h, calc(96 * var(--u)));
+  padding: calc(var(--card-w, calc(68 * var(--u))) * 0.09);
+  overflow: visible;
+  color: #14181E;
+  background:
+    /* 顶部微高光 */
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0) 18%),
+    /* 主体暖白 */
+    linear-gradient(180deg, #FFFBF0 0%, #F5EFE0 100%);
+  border: 1px solid #B8AE96;
+  border-radius: calc(8 * var(--u));
+  box-shadow:
+    /* 底部投影 */
+    0 4px 10px rgba(0, 0, 0, 0.28),
+    /* 侧边暗部 */
+    inset -1px -1px 0 rgba(120, 110, 90, 0.15),
+    /* 顶部亮边 */
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    transform 160ms cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 160ms cubic-bezier(0.2, 0, 0, 1),
+    border-color 160ms ease;
+}
+
+/* 牌面纸质感噪点 */
+.poker-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: calc(7 * var(--u));
+  background-image: var(--texture-grain);
+  background-size: 100px 100px;
+  opacity: 0.35;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+
+.poker-card:hover {
+  transform: translateY(-5px);
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.32),
+    inset -1px -1px 0 rgba(120, 110, 90, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+.poker-card:active { transform: translateY(-2px) scale(0.98); }
+
+/* 选中：金边 + 大幅上浮 + 金光辉映 */
+.poker-card.card-selected {
+  z-index: 12;
+  transform: translateY(-20px);
+  border-color: #D4A038;
+  box-shadow:
+    /* 金色外发光 */
+    0 0 0 2px rgba(242, 201, 106, 0.5),
+    0 0 24px rgba(242, 201, 106, 0.45),
+    /* 底部投影 */
+    0 16px 32px rgba(0, 0, 0, 0.35),
+    /* 顶部金边高光 */
+    inset 0 2px 0 rgba(255, 251, 240, 0.7),
+    /* 内侧金边 */
+    inset 0 0 0 1px #F2C96A;
+}
+
+/* 提示牌：翡翠色发光呼吸 */
+.poker-card.card-hinted {
+  z-index: 11;
+  transform: translateY(-10px);
+  border-color: #56B37F;
+  box-shadow:
+    inset 0 0 0 2px #56B37F,
+    0 0 16px rgba(86, 179, 127, 0.6),
+    0 8px 16px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  animation: card-hint-glow 1.8s ease-in-out infinite;
+}
+@keyframes card-hint-glow {
+  0%, 100% {
+    transform: translateY(-8px);
+    box-shadow:
+      inset 0 0 0 2px #56B37F,
+      0 0 12px rgba(86, 179, 127, 0.45),
+      0 6px 12px rgba(0, 0, 0, 0.28),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+  50% {
+    transform: translateY(-14px);
+    box-shadow:
+      inset 0 0 0 2px #8FD4A8,
+      0 0 28px rgba(143, 212, 168, 0.7),
+      0 10px 22px rgba(0, 0, 0, 0.32),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+}
+
+.poker-card.card-disabled {
+  opacity: 1;
+  cursor: default;
+  filter: grayscale(0.2) brightness(0.92);
+}
+.poker-card.card-disabled:hover,
+.poker-card.card-disabled:active {
+  transform: none;
+  box-shadow:
+    0 3px 7px rgba(0, 0, 0, 0.25),
+    inset -1px -1px 0 rgba(120, 110, 90, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.poker-card.card-small {
+  width: calc(var(--card-w, calc(68 * var(--u))) * 0.78);
+  height: calc(var(--card-h, calc(96 * var(--u))) * 0.78);
+  padding: calc(3 * var(--u));
+}
+
+.poker-card.card-red { color: #C4242D; }
+.poker-card.card-black { color: #14181E; }
+
+/* ===== 主牌：金色底 + 金边 + 顶部金条 ===== */
+.poker-card.card-main {
+  border-color: #C98B26;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 15%),
+    linear-gradient(180deg, #FFF8E5 0%, #FFEFC4 50%, #F7D98E 100%);
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.28),
+    inset 0 3px 0 #E8BC56,
+    inset 0 0 0 1px #FFFBF0,
+    inset 0 0 0 2px rgba(242, 201, 106, 0.4);
+}
+/* 主牌顶部金色条 */
+.poker-card.card-main::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: calc(4 * var(--u));
+  background: linear-gradient(90deg, #C98B26 0%, #F2C96A 50%, #C98B26 100%);
+  border-radius: calc(7 * var(--u)) calc(7 * var(--u)) 0 0;
+  opacity: 0.9;
+}
+
+/* ===== 天王：金红渐变 + 醒目光晕 ===== */
+.poker-card.card-tianwang {
+  color: #7A1A1A;
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(255, 255, 255, 0.4) 0%, transparent 50%),
+    linear-gradient(180deg, #FFE7A3 0%, #F5C96E 35%, #E89A3C 65%, #D17535 100%);
+  border-color: #9A6320;
+  box-shadow:
+    0 0 18px rgba(242, 150, 60, 0.5),
+    0 5px 12px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 251, 240, 0.6),
+    inset 0 0 0 1.5px #F2C96A;
+  animation: tianwang-glow 2.5s ease-in-out infinite;
+}
+.poker-card.card-tianwang::before { display: none; }
+@keyframes tianwang-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 16px rgba(242, 150, 60, 0.4),
+      0 5px 12px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 251, 240, 0.6),
+      inset 0 0 0 1.5px #F2C96A;
+  }
+  50% {
+    box-shadow:
+      0 0 28px rgba(242, 150, 60, 0.65),
+      0 7px 18px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 251, 240, 0.7),
+      inset 0 0 0 1.5px #F9DE95;
+  }
+}
+
+/* 天王徽章 */
+.card-tianwang-badge {
+  position: absolute;
+  top: calc(3 * var(--u)); right: calc(3 * var(--u));
+  padding: 1px calc(5 * var(--u));
+  color: #FFF8E5;
+  background: linear-gradient(180deg, #D13535 0%, #8B1A1A 100%);
+  border-radius: calc(4 * var(--u));
+  font-size: 8px;
+  font-weight: 900;
+  line-height: 1.2;
+  white-space: nowrap;
+  letter-spacing: 0.08em;
+  box-shadow:
+    0 1px 4px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  z-index: 3;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+/* ===== 分数牌角标 ===== */
+.card-score-badge {
+  position: absolute;
+  bottom: 2px; left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  min-width: calc(15 * var(--u));
+  height: calc(15 * var(--u));
+  padding: 0 calc(2 * var(--u));
+  box-sizing: border-box;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 900;
+  color: #fff;
+  background: linear-gradient(180deg, #E89A3C 0%, #B06518 100%);
+  border-radius: 999px;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  line-height: 1;
+  z-index: 2;
+}
+.poker-card.card-main .card-score-badge {
+  background: linear-gradient(180deg, #D13535 0%, #8B1A1A 100%);
+}
+.poker-card.card-tianwang .card-score-badge {
+  background: linear-gradient(180deg, #7A1A1A 0%, #5A1010 100%);
+}
+
+/* ===== 牌角文字 ===== */
+.card-corner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: calc(var(--card-w, calc(68 * var(--u))) * 0.31);
+  font-weight: 900;
+  line-height: 0.88;
+  letter-spacing: -0.04em;
+  z-index: 1;
+  position: relative;
+}
+.card-corner-tl { align-self: flex-start; }
+.card-corner-br { align-self: flex-end; transform: rotate(180deg); }
+.card-rank { font-size: calc(var(--card-w, calc(68 * var(--u))) * 0.30); }
+.card-suit { margin-top: 2px; font-size: calc(var(--card-w, calc(68 * var(--u))) * 0.26); line-height: 1; }
+
+/* 中央花色大图标 */
+.card-center {
+  position: absolute;
+  top: 54%; left: 56%;
+  display: flex; align-items: center; justify-content: center;
+  transform: translate(-50%, -50%);
+  opacity: 0.9;
+  z-index: 1;
+}
+.card-center-suit {
+  font-size: calc(var(--card-w, calc(68 * var(--u))) * 0.52);
+  line-height: 1;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1));
+}
+
+/* 大小王 */
+.poker-card.card-joker {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 15%),
+    linear-gradient(180deg, #FFFBF0 0%, #EDE6D4 100%);
+}
+.card-joker-text {
+  color: #1A2A3D;
+  font-size: calc(var(--card-w, calc(68 * var(--u))) * 0.22);
+  font-weight: 900;
+  line-height: 1.05;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+.poker-card.card-red.card-joker .card-joker-text { color: #C4242D; }
+
+/* 小尺寸牌适配 */
+.card-small .card-rank { font-size: calc(15 * var(--ut)); }
+.card-small .card-suit { font-size: calc(12 * var(--ut)); }
+.card-small .card-center-suit { font-size: calc(24 * var(--u)); }
+.card-small .card-joker-text { font-size: 9px; }
+.card-small .card-tianwang-badge { font-size: 7px; padding: 1px calc(3 * var(--u)); top: 1px; right: 1px; }
+/* 小牌上的分数角标：「10」是两位数，原来固定 11px 正圆 + 7px 字号只有 7px
+   可用宽度，实测「10」要 9px，右边那个 0 被切掉一半。
+   改成 min-width + 横向留内边距，让两位数把圆点撑成小胶囊；
+   一位数（5 / K）仍然是正圆，视觉上不变。 */
+.card-small .card-score-badge {
+  width: auto;
+  min-width: calc(11 * var(--u));
+  height: calc(11 * var(--u));
+  padding: 0 calc(2 * var(--u));
+  border-radius: calc(11 * var(--u));
+  font-size: 7px;
+}
+
+/* ============================================================
+   小牌 / 手机端：只留一处花色，不再三处互相压
+   ------------------------------------------------------------
+   这个组件（Card.tsx）和牌桌的 TableV4 是**两套独立实现**，
+   结算页、战绩图、发牌预览走的都是这里。上一轮只修了 TableV4，
+   所以用户在结算页仍然看到花色重叠 —— 实测 812x375 下
+   一屏 16 张牌有 32 处重叠（左上角标↔中央大花色 压 3x10px）。
+
+   原因和牌桌那边一样：一张牌上同时画「左上角标 + 中央大花色 + 右下角标」，
+   真实扑克能这么排是因为实物有 ~57x87mm，缩到 32~53px 宽还硬塞三处
+   只会糊成一团，方块/梅花根本分不出来。
+
+   做法：小牌一律只保留左上角标，并把它放大到能一眼分清 ♠/♣、♥/♦。
+   .card-small 覆盖结算页/战绩图；(pointer: coarse) 覆盖手机端所有尺寸。
+   ============================================================ */
+.card-small .card-center,
+.card-small .card-corner-br {
+  display: none;
+}
+/* 牌小了字反而要大才认得出；用卡片宽度比例兜住上限，避免窄牌溢出 */
+.card-small .card-suit {
+  font-weight: 900;
+  line-height: 1;
+  margin-top: 1px;
+  font-size: min(calc(17 * var(--ut)), calc(0.40 * var(--card-w, calc(68 * var(--u)))));
+}
+.card-small .card-rank {
+  font-weight: 900;
+  line-height: 1;
+  font-size: min(calc(16 * var(--ut)), calc(0.38 * var(--card-w, calc(68 * var(--u)))));
+}
+/* 只剩一处角标后，让它占满整张牌宽，视觉重心回到中间 */
+.card-small .card-corner-tl {
+  width: 100%;
+  align-items: center;
+}
+
+/* 手机端微调 */
+@media (max-width: 480px) {
+  .poker-card { border-radius: calc(6 * var(--u)); }
+  .poker-card.card-selected { transform: translateY(-14px); }
+  .card-tianwang-badge { top: 2px; right: 2px; font-size: 7px; }
+}
+
+/* 触屏设备：不论是不是 small，都按小牌处理（手机上牌本来就小） */
+@media (pointer: coarse) {
+  .poker-card .card-center,
+  .poker-card .card-corner-br {
+    display: none;
+  }
+  .poker-card .card-corner-tl {
+    width: 100%;
+    align-items: center;
+  }
+  .poker-card .card-suit {
+    font-weight: 900;
+    line-height: 1;
+    margin-top: 1px;
+    font-size: min(calc(19 * var(--ut)), calc(0.42 * var(--card-w, calc(68 * var(--u)))));
+  }
+  .poker-card .card-rank {
+    font-weight: 900;
+    line-height: 1;
+    font-size: min(calc(18 * var(--ut)), calc(0.40 * var(--card-w, calc(68 * var(--u)))));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poker-card, .poker-card * { transition: none !important; animation: none !important; }
+}
+
+/* ===== 动画曲线优化 ===== */
+.poker-card.card-selected {
+  transition:
+    transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 220ms cubic-bezier(0.2, 0, 0, 1),
+    border-color 200ms ease-out;
+}
+.poker-card:hover {
+  transition:
+    transform 200ms cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+.poker-card:active {
+  transition: transform 80ms cubic-bezier(0.3, 0, 1, 1);
+}
+
+/* 主牌 hover 金边增强 */
+.poker-card.card-main:hover {
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.32),
+    inset 0 3px 0 #E8BC56,
+    inset 0 0 0 1px #FFFBF0,
+    inset 0 0 0 2px rgba(242, 201, 106, 0.55);
+}
+
+/* 天王 hover 放大 + 更强光晕 */
+.poker-card.card-tianwang:hover {
+  transform: translateY(-6px) scale(1.03);
+  box-shadow:
+    0 0 32px rgba(242, 150, 60, 0.7),
+    0 10px 24px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    inset 0 0 0 1.5px #F9DE95;
+}
+
+/* 花色字形：同 table-v4.css，iOS 上必须挡住彩色 emoji 字体接管，
+   否则 CSS color 失效、花色恒为 emoji 原色。 */
+.card-suit,
+.card-center-suit {
+  font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  font-variant-emoji: text;
+}

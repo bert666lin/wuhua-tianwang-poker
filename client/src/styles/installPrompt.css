@@ -1,0 +1,386 @@
+/* ===== PWA 安装引导 v3 ===== */
+
+@import './tokens.css';
+
+/* 遮罩 */
+.ip-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  background: rgba(7, 16, 30, 0.7);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: ip-fade-in 0.3s ease-out;
+}
+
+@keyframes ip-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 引导卡（底部上滑） */
+.ip-card {
+  position: fixed;
+  z-index: 9600;
+  left: 50%;
+  bottom: max(calc(20 * var(--u)), env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(calc(420 * var(--u)), calc(100vw - calc(32 * var(--u))));
+  /* iOS 教程有 4 步 + Safari 示意图，在 iPhone SE 这类小屏上整卡比屏幕还高，
+     顶部会被裁掉（连标题都看不到）。限高并允许内部滚动，卡片永远不越界。 */
+  max-height: calc(100vh - calc(32 * var(--u)) - env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  background: linear-gradient(180deg, #1A2440 0%, #0F1A2E 100%);
+  border: 1px solid var(--c-gold-500);
+  border-radius: var(--r-lg);
+  padding: var(--sp-5);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5), 0 0 40px rgba(227, 195, 138, 0.2);
+  animation: ip-card-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--c-text);
+}
+
+@keyframes ip-card-in {
+  from { transform: translateX(-50%) translateY(100%); opacity: 0; }
+  to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+.ip-close {
+  position: absolute;
+  top: calc(12 * var(--u));
+  right: calc(12 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(28 * var(--u));
+  height: calc(28 * var(--u));
+  background: rgba(46, 61, 107, 0.3);
+  border: 1px solid var(--c-border-soft);
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--c-text-mute);
+  transition: all 0.2s;
+}
+
+.ip-close:hover {
+  background: rgba(232, 90, 78, 0.15);
+  color: var(--c-red-400);
+}
+
+/* 头部 */
+.ip-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(6 * var(--u));
+  margin-bottom: var(--sp-4);
+  text-align: center;
+}
+
+.ip-icon {
+  width: calc(56 * var(--u));
+  height: calc(56 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--c-gold-400) 0%, var(--c-gold-700) 100%);
+  border: 2px solid var(--c-gold-200);
+  border-radius: 50%;
+  box-shadow: 0 0 24px rgba(232, 211, 168, 0.4);
+  margin-bottom: var(--sp-2);
+  color: var(--c-blue-900);
+}
+
+.ip-title {
+  font-size: var(--fs-18);
+  font-weight: 700;
+  color: var(--c-text);
+  letter-spacing: 1px;
+}
+
+.ip-sub {
+  font-size: var(--fs-12);
+  color: var(--c-text-mute);
+}
+
+/* 3 大好处 */
+.ip-benefits {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+}
+
+.ip-benefit {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  background: rgba(46, 61, 107, 0.3);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--r-md);
+}
+
+.ip-benefit-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(32 * var(--u));
+  height: calc(32 * var(--u));
+  background: var(--grad-gold-soft);
+  border: 1px solid var(--c-gold-600);
+  border-radius: var(--r-sm);
+  flex-shrink: 0;
+}
+
+.ip-benefit-text {
+  font-size: var(--fs-13);
+  color: var(--c-text);
+  font-weight: 500;
+}
+
+/* 按钮组 */
+.ip-action {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.ip-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  flex: 1;
+  padding: var(--sp-3) var(--sp-4);
+  font-size: var(--fs-14);
+  font-weight: 600;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+  letter-spacing: 0.5px;
+}
+
+.ip-btn--primary {
+  background: var(--grad-button);
+  border-color: var(--c-gold-300);
+  color: var(--c-text-on-gold);
+  box-shadow: 0 4px 12px rgba(227, 195, 138, 0.3);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.ip-btn--primary:hover {
+  background: var(--grad-button-hover);
+  transform: translateY(-1px);
+}
+
+.ip-btn--ghost {
+  background: transparent;
+  border-color: var(--c-border-soft);
+  color: var(--c-text-mute);
+}
+
+.ip-btn--ghost:hover {
+  background: rgba(46, 61, 107, 0.3);
+  color: var(--c-text);
+}
+
+.ip-btn--full {
+  width: 100%;
+  margin-top: var(--sp-3);
+}
+
+/* iOS 步骤教学 */
+.ip-ios {
+  display: flex;
+  flex-direction: column;
+}
+
+.ip-ios-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+
+.ip-ios-step {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  background: rgba(15, 26, 46, 0.4);
+  border-left: 2px solid var(--c-gold-400);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+
+.ip-ios-step-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(24 * var(--u));
+  height: calc(24 * var(--u));
+  background: var(--grad-gold);
+  color: var(--c-text-on-gold);
+  font-size: var(--fs-12);
+  font-weight: 800;
+  border-radius: 50%;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+}
+
+.ip-ios-step-text {
+  flex: 1;
+  font-size: var(--fs-13);
+  color: var(--c-text);
+  display: flex;
+  align-items: center;
+  gap: calc(4 * var(--u));
+  flex-wrap: wrap;
+}
+
+.ip-ios-highlight {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px calc(6 * var(--u));
+  background: rgba(232, 211, 168, 0.15);
+  border: 1px solid var(--c-gold-500);
+  border-radius: var(--r-sm);
+  color: var(--c-gold-200);
+  font-weight: 600;
+}
+
+/* iOS Safari 示意 */
+.ip-ios-illustration {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin: var(--sp-3) 0;
+}
+
+.ip-ios-safari {
+  width: calc(240 * var(--u));
+  height: calc(160 * var(--u));
+  background: #1C1C1E;
+  border: 2px solid #48484A;
+  border-radius: calc(12 * var(--u));
+  overflow: hidden;
+  position: relative;
+}
+
+.ip-ios-safari-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(6 * var(--u)) calc(12 * var(--u));
+  background: rgba(28, 28, 30, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ip-ios-safari-url {
+  font-size: 10px;
+  color: #999;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px calc(8 * var(--u));
+  border-radius: calc(6 * var(--u));
+}
+
+.ip-ios-safari-share {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(24 * var(--u));
+  height: calc(24 * var(--u));
+  background: rgba(0, 122, 255, 0.85);
+  border-radius: 50%;
+  animation: ip-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes ip-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 122, 255, 0.6); }
+  50% { box-shadow: 0 0 0 8px rgba(0, 122, 255, 0); }
+}
+
+.ip-ios-safari-content {
+  height: calc(100% - calc(36 * var(--u)));
+  background: linear-gradient(180deg, #2E3D6B 0%, #0F1A2E 100%);
+}
+
+.ip-ios-arrow {
+  position: absolute;
+  top: calc(-16 * var(--u));
+  right: calc(20 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(36 * var(--u));
+  height: calc(36 * var(--u));
+  background: var(--grad-gold);
+  border: 2px solid var(--c-gold-300);
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  color: var(--c-text-on-gold);
+  animation: ip-bounce 1.4s ease-in-out infinite;
+}
+
+@keyframes ip-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* 横屏时变居中弹窗 */
+@media (orientation: landscape) and (max-height: 500px) {
+  .ip-card {
+    bottom: 50%;
+    transform: translate(-50%, 50%);
+    width: min(calc(360 * var(--u)), calc(100vw - calc(32 * var(--u))));
+    max-height: calc(100vh - calc(24 * var(--u)));
+  }
+
+  @keyframes ip-card-in {
+    from { transform: translate(-50%, calc(50% + 100px)); opacity: 0; }
+    to { transform: translate(-50%, 50%); opacity: 1; }
+  }
+
+  /* 横屏高度很紧：Safari 示意图只是锦上添花，文字步骤才是关键，先砍图 */
+  .ip-ios-illustration { display: none; }
+  .ip-benefits { display: none; }
+}
+
+/* 竖屏小屏机（iPhone SE 一档）同样砍掉示意图，避免整卡贴满屏幕 */
+@media (orientation: portrait) and (max-height: 620px) {
+  .ip-ios-illustration { display: none; }
+}
+
+/* 微信内提示条：先把用户送去系统浏览器，后面的步骤才有意义 */
+.ip-wx-tip {
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-3);
+  background: rgba(232, 211, 168, 0.12);
+  border: 1px solid var(--c-gold-500);
+  border-radius: var(--r-md);
+  text-align: center;
+}
+
+.ip-wx-tip-title {
+  font-size: var(--fs-14);
+  font-weight: 700;
+  color: var(--c-gold-200);
+  margin-bottom: calc(2 * var(--u));
+}
+
+.ip-wx-tip-body {
+  font-size: var(--fs-12);
+  color: var(--c-text-mute);
+  line-height: 1.7;
+}
+
+.ip-wx-tip-body b {
+  color: var(--c-text-gold);
+}
+
+/* 引导卡里的按钮有 <a> 也有 <button>，链接要跟按钮长得一样 */
+a.ip-btn {
+  text-decoration: none;
+}

@@ -1,0 +1,2454 @@
+/* ===== Lobby v6 — 五华天王国潮二次元风格 =====
+ * 横屏优先，严格按样图比例
+ */
+
+@import './tokens.css';
+
+/* ============================================================
+   全局 & 背景
+   ============================================================ */
+.lobby-root {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  min-height: 100vh;
+  max-height: 100dvh;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(255,255,255,0.18) 0%, transparent 70%),
+    url('/assets/ui/bg-main.webp') center / cover no-repeat,
+    linear-gradient(135deg, #5B7BD9 0%, #7A5CC9 50%, #8E6FDD 100%);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  /* 左右安全区不在这里给：main.tsx 全局包着 <OrientationLock>，
+     orientationLock.css 在「横屏且高 <=500」时已经给 body 加了
+     env(safe-area-inset-left/right) 的 padding，本页 width:100% 会跟着收缩。
+     这里再写一遍会双重叠加（真机实测：左右各让出 47+47=94px，
+     三栏布局被二次挤压成"图形全缩到中间"，快速按钮反而被顶出刘海区）。
+     竖屏时左右 inset 恒为 0，不写也无影响。 */
+}
+@supports not (height: 100dvh) {
+  .lobby-root { height: 100vh; }
+}
+
+.lobby-root::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 35%;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% 130%, rgba(255,255,255,0.12) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================================
+   顶栏 HUD
+   ============================================================ */
+.lobby-hud {
+  display: flex;
+  align-items: center;
+  gap: calc(14 * var(--u));
+  padding: calc(12 * var(--u)) calc(28 * var(--u));
+  flex-shrink: 0;
+  position: relative;
+  z-index: 20;
+}
+
+/* 这块现在是 <button>（点它进「我的」），
+   必须清掉浏览器默认的按钮边框/背景/内边距，否则顶栏会多出一个灰框。 */
+.lobby-hud-user {
+  display: flex;
+  align-items: center;
+  gap: calc(10 * var(--u));
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: 0;
+  padding: calc(2 * var(--u)) calc(6 * var(--u)) calc(2 * var(--u)) calc(2 * var(--u));
+  margin: 0;
+  border-radius: calc(30 * var(--u));
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  transition: background 0.15s ease, transform 0.12s ease;
+}
+.lobby-hud-user:hover { background: rgba(255,255,255,0.10); }
+.lobby-hud-user:active { transform: scale(0.97); }
+.lobby-hud-user:focus-visible {
+  outline: calc(2 * var(--u)) solid rgba(255,255,255,0.7);
+  outline-offset: calc(1 * var(--u));
+}
+.lobby-hud-avatar {
+  width: calc(52 * var(--u));
+  height: calc(52 * var(--u));
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, #fff 0%, #E0E7FF 40%, #818CF8 100%);
+  border: calc(3 * var(--u)) solid rgba(255,255,255,0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 calc(4 * var(--u)) calc(14 * var(--u)) rgba(0,0,0,0.2),
+    inset 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(255,255,255,0.3);
+  color: #6366F1;
+  flex-shrink: 0;
+}
+.lobby-hud-user-info { display: flex; flex-direction: column; gap: calc(3 * var(--u)); }
+.lobby-hud-nick {
+  font-size: calc(18 * var(--ut));
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 calc(1 * var(--u)) calc(4 * var(--u)) rgba(0,0,0,0.3);
+  line-height: 1.1;
+}
+.lobby-hud-level {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(4 * var(--u));
+  padding: calc(2 * var(--u)) calc(10 * var(--u));
+  background: linear-gradient(135deg, #059669 0%, #065F46 100%);
+  border-radius: calc(20 * var(--u));
+  border: calc(1 * var(--u)) solid rgba(255,255,255,0.22);
+  font-size: max(calc(11 * var(--ut)), 10px);
+  font-weight: 800;
+  color: #fff;
+  width: fit-content;
+  line-height: 1.4;
+  box-shadow: 0 calc(2 * var(--u)) calc(6 * var(--u)) rgba(16,185,129,0.4);
+}
+.lobby-hud-level::before { content: '★'; font-size: calc(10 * var(--u)); }
+
+.lobby-hud-resources {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(12 * var(--u));
+}
+.lobby-resource {
+  display: flex;
+  align-items: center;
+  gap: calc(8 * var(--u));
+  padding: calc(6 * var(--u)) calc(16 * var(--u)) calc(6 * var(--u)) calc(6 * var(--u));
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: calc(32 * var(--u));
+  box-shadow:
+    0 calc(4 * var(--u)) calc(14 * var(--u)) rgba(0,0,0,0.12),
+    inset 0 calc(2 * var(--u)) 0 rgba(255,255,255,0.8),
+    0 0 0 calc(1 * var(--u)) rgba(255,255,255,0.6);
+  font-size: calc(16 * var(--ut));
+  font-weight: 800;
+  color: #1E3A8A;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: transform 0.15s var(--ease-spring);
+  border: none;
+  position: relative;
+}
+.lobby-resource::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 15%; right: 15%;
+  height: 40%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.6), transparent);
+  border-radius: calc(32 * var(--u)) calc(32 * var(--u)) 0 0;
+  pointer-events: none;
+}
+.lobby-resource:active { transform: scale(0.96); }
+.lobby-resource-icon {
+  width: calc(30 * var(--u));
+  height: calc(30 * var(--u));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+.lobby-resource-icon--coin {
+  background: radial-gradient(circle at 30% 25%, #FEF08A, #EAB308);
+  color: #92400E;
+  box-shadow: inset 0 calc(1 * var(--u)) calc(2 * var(--u)) rgba(255,255,255,0.6);
+}
+.lobby-resource-icon--star {
+  background: radial-gradient(circle at 30% 25%, #BFDBFE, #3B82F6);
+  color: #1E40AF;
+  box-shadow: inset 0 calc(1 * var(--u)) calc(2 * var(--u)) rgba(255,255,255,0.6);
+}
+/* 房卡：绿色，和金币(金)、星币(蓝)区分开，扫一眼能认出是第三种资源 */
+.lobby-resource-icon--card {
+  background: radial-gradient(circle at 30% 25%, #A7F3D0, #10B981);
+  color: #065F46;
+  box-shadow: inset 0 calc(1 * var(--u)) calc(2 * var(--u)) rgba(255,255,255,0.6);
+}
+.lobby-resource-add {
+  width: calc(24 * var(--u));
+  height: calc(24 * var(--u));
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FDE68A, #F59E0B);
+  color: #4C1D95;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: max(calc(16 * var(--u)), 12px);
+  font-weight: 900;
+  flex-shrink: 0;
+  box-shadow:
+    0 calc(2 * var(--u)) calc(6 * var(--u)) rgba(245,158,11,0.45),
+    inset 0 calc(1 * var(--u)) 0 rgba(255,255,255,0.5);
+  position: relative;
+  z-index: 1;
+}
+
+.lobby-hud-actions {
+  display: flex;
+  align-items: center;
+  gap: calc(10 * var(--u));
+}
+.lobby-hud-icon-btn {
+  position: relative;
+  width: calc(44 * var(--u));
+  height: calc(44 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.92);
+  border-radius: 50%;
+  color: #4338CA;
+  cursor: pointer;
+  transition: transform 0.15s;
+  box-shadow:
+    0 calc(3 * var(--u)) calc(10 * var(--u)) rgba(0,0,0,0.12),
+    inset 0 calc(2 * var(--u)) 0 rgba(255,255,255,0.8);
+  border: none;
+  font-size: calc(18 * var(--u));
+}
+.lobby-hud-icon-btn:active { transform: scale(0.9); }
+.lobby-hud-icon-btn--more {
+  width: auto;
+  padding: 0 calc(14 * var(--u));
+  border-radius: calc(26 * var(--u));
+  gap: calc(5 * var(--u));
+  font-size: calc(20 * var(--u));
+}
+.lobby-hud-badge {
+  position: absolute;
+  top: calc(-2 * var(--u)); right: calc(-2 * var(--u));
+  min-width: calc(18 * var(--u)); height: calc(18 * var(--u));
+  padding: 0 calc(5 * var(--u));
+  display: flex; align-items: center; justify-content: center;
+  background: #DC2626;
+  color: #fff;
+  font-size: 10px; font-weight: 800;
+  border-radius: calc(12 * var(--u));
+  border: calc(2 * var(--u)) solid #fff;
+  line-height: 1;
+  box-shadow: 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(239,68,68,0.4);
+}
+
+/* ============================================================
+   主区容器
+   ============================================================ */
+.lobby-main {
+  flex: 1;
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  width: 100%;
+}
+.lobby-main > * {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  width: 100%;
+}
+
+/* ============================================================
+   内容三栏布局
+   ============================================================ */
+.lobby-content {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: flex-end;
+  padding: 0 calc(64 * var(--u));
+  gap: calc(16 * var(--u));
+  overflow: hidden;
+  min-height: 0;
+  position: relative;
+}
+
+/* 左侧入口 */
+.lobby-side-entries {
+  position: absolute;
+  left: calc(64 * var(--u));
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(18 * var(--u));
+  width: calc(72 * var(--u));
+  justify-content: center;
+  align-items: flex-start;
+  z-index: 10;
+}
+.lobby-side-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(6 * var(--u));
+  cursor: pointer;
+  transition: transform 0.15s var(--ease-spring);
+  width: 100%;
+}
+.lobby-side-entry:active { transform: scale(0.92); }
+.lobby-side-entry-icon {
+  width: calc(68 * var(--u));
+  height: calc(68 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+/* ===== 彩色图标底座（游戏风 icon-chip）===== */
+.icon-chip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  /* 主体渐变 */
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,0.55) 0%, transparent 40%),
+    linear-gradient(160deg, var(--chip-from) 0%, var(--chip-via) 45%, var(--chip-to) 100%);
+  /* 描边 */
+  box-shadow:
+    /* 外发光 */
+    0 0 calc(14 * var(--u)) var(--chip-glow),
+    /* 底部厚度 */
+    0 calc(5 * var(--u)) calc(12 * var(--u)) rgba(0,0,0,0.25),
+    /* 内高光 */
+    inset 0 calc(2 * var(--u)) 0 rgba(255,255,255,0.45),
+    /* 内阴影 */
+    inset 0 calc(-3 * var(--u)) calc(6 * var(--u)) rgba(0,0,0,0.12),
+    /* 描边 */
+    0 0 0 calc(2 * var(--u)) rgba(255,255,255,0.25);
+  color: #fff;
+}
+.icon-chip svg {
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 calc(1 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,0.25));
+}
+/* 顶部高光椭圆 */
+.icon-chip::before {
+  content: '';
+  position: absolute;
+  top: calc(12%);
+  left: 18%;
+  right: 18%;
+  height: 22%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* 各主题色变量 */
+.icon-chip--gift {
+  --chip-from: #FEF3C7; --chip-via: #FBBF24; --chip-to: #D97706;
+  --chip-glow: rgba(251, 191, 36, 0.5);
+}
+.icon-chip--redpacket {
+  --chip-from: #FCA5A5; --chip-via: #C81E1E; --chip-to: #7F1010;
+  --chip-glow: rgba(239, 68, 68, 0.45);
+}
+.icon-chip--shop {
+  --chip-from: #BBF7D0; --chip-via: #22C55E; --chip-to: #15803D;
+  --chip-glow: rgba(34, 197, 94, 0.4);
+}
+.icon-chip--vip {
+  --chip-from: #FEF08A; --chip-via: #F59E0B; --chip-to: #B45309;
+  --chip-glow: rgba(245, 158, 11, 0.5);
+}
+.icon-chip--event {
+  --chip-from: #FBCFE8; --chip-via: #EC4899; --chip-to: #9D174D;
+  --chip-glow: rgba(236, 72, 153, 0.4);
+}
+.icon-chip--rank {
+  --chip-from: #C4B5FD; --chip-via: #8B5CF6; --chip-to: #5B21B6;
+  --chip-glow: rgba(139, 92, 246, 0.45);
+}
+.icon-chip--friends {
+  --chip-from: #93C5FD; --chip-via: #3B82F6; --chip-to: #1D4ED8;
+  --chip-glow: rgba(59, 130, 246, 0.4);
+}
+.icon-chip--more {
+  --chip-from: #CBD5E1; --chip-via: #64748B; --chip-to: #334155;
+  --chip-glow: rgba(100, 116, 139, 0.35);
+}
+/* 分享：用青绿一档，和商城(蓝)/会员(金)/活动(粉)/排行(紫)/战绩(蓝)区分开 */
+.icon-chip--share {
+  --chip-from: #A7F3D0; --chip-via: #10B981; --chip-to: #047857;
+  --chip-glow: rgba(16, 185, 129, 0.45);
+}
+
+.lobby-side-entry-label {
+  font-size: calc(13 * var(--ut));
+  font-weight: 700;
+  color: #fff;
+  text-shadow:
+    0 calc(1 * var(--u)) calc(4 * var(--u)) rgba(0,0,0,0.5),
+    0 0 calc(8 * var(--u)) rgba(255,255,255,0.2);
+  white-space: nowrap;
+  letter-spacing: calc(1 * var(--u));
+}
+
+/* ============================================================
+   中央区（仅 Logo）
+   ============================================================ */
+.lobby-center-group {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding-right: calc(24 * var(--u));
+  max-width: calc(440 * var(--u));
+}
+
+/* Logo — 垂直居中 */
+.lobby-hero {
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  /* Logo 高度 */
+  height: 78%;
+  max-height: calc(360 * var(--u));
+  flex-shrink: 1;
+  min-width: 0;
+}
+.lobby-hero-logo {
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 calc(6 * var(--u)) calc(16 * var(--u)) rgba(0,0,0,0.35));
+  animation: floatY 4s ease-in-out infinite;
+}
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(calc(-6 * var(--u))); }
+}
+
+/* ============================================================
+   经典大卡（网格中跨两行）
+   ============================================================ */
+.lobby-classic-card {
+  position: relative;
+  border-radius: calc(20 * var(--u));
+  overflow: hidden;
+  /* 同上：网格项默认 min-width:auto，会被里面的图撑开 */
+  min-width: 0;
+  cursor: pointer;
+  transition: transform 0.25s var(--ease-spring), box-shadow 0.25s;
+  box-shadow: 0 calc(12 * var(--u)) calc(36 * var(--u)) rgba(0,0,0,0.25);
+}
+.lobby-classic-card--grid {
+  grid-row: span 2;
+}
+.lobby-classic-card:hover {
+  transform: translateY(calc(-4 * var(--u)));
+  box-shadow: 0 calc(16 * var(--u)) calc(44 * var(--u)) rgba(0,0,0,0.3);
+}
+.lobby-classic-card:active {
+  transform: scale(0.97);
+}
+.lobby-classic-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  /* 替换元素（img）的 min-content 宽在 WebKit 里等于图片原始宽度，
+     不写 min-width:0 的话父格子永远压不下来。 */
+  min-width: 0;
+  max-width: 100%;
+  display: block;
+}
+.lobby-classic-badge {
+  position: absolute;
+  top: calc(16 * var(--u));
+  left: calc(16 * var(--u));
+  padding: calc(4 * var(--u)) calc(14 * var(--u));
+  background: linear-gradient(135deg, #FDE68A, #F59E0B);
+  color: #78350F;
+  font-size: calc(12 * var(--ut));
+  font-weight: 800;
+  border-radius: calc(16 * var(--u));
+  z-index: 2;
+  box-shadow: 0 calc(3 * var(--u)) calc(8 * var(--u)) rgba(0,0,0,0.2);
+  letter-spacing: calc(2 * var(--u));
+}
+.lobby-classic-card-label {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: calc(24 * var(--u)) calc(20 * var(--u)) calc(20 * var(--u));
+  background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.5) 100%);
+  text-align: center;
+}
+.lobby-classic-card-sub {
+  font-size: calc(14 * var(--u));
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: calc(2 * var(--u));
+  margin-bottom: calc(4 * var(--u));
+  text-shadow: 0 calc(1 * var(--u)) calc(4 * var(--u)) rgba(0,0,0,0.4);
+}
+.lobby-classic-card-title {
+  font-size: calc(36 * var(--u));
+  font-weight: 900;
+  color: #fff;
+  text-shadow:
+    0 calc(2 * var(--u)) calc(8 * var(--u)) rgba(0,0,0,0.6),
+    0 0 calc(24 * var(--u)) rgba(99,102,241,0.5);
+  letter-spacing: calc(12 * var(--u));
+}
+
+/* ============================================================
+   右侧 2x2 模式卡
+   ============================================================ */
+.lobby-mode-grid {
+  flex-shrink: 0;
+  display: grid;
+  /* 第一列（经典大卡）曾写 auto —— 在 Safari/WebKit 上是致命的：
+     auto 列的最小尺寸取「最小内容宽度」，而卡里那张 ip-classic-x.webp
+     原始宽 636px，WebKit 就把这一列撑成 636px（Chrome 只给 138px）。
+     整个网格 881px > 750px 视口，于是大厅被顶出屏幕左侧，
+     iPhone 横屏上模式卡直接看不见（left 实测 -166px）。
+     改成 minmax(0, …) 明确允许收缩，两个引擎结果一致。 */
+  grid-template-columns:
+    minmax(0, calc(240 * var(--u)))
+    calc(210 * var(--u))
+    calc(210 * var(--u));
+  grid-template-rows: 1fr 1fr;
+  gap: calc(12 * var(--u));
+  padding: calc(12 * var(--u)) 0;
+  align-self: stretch;
+  /* 网格自身也不许被内容顶宽 */
+  min-width: 0;
+  max-width: 100%;
+}
+
+.lobby-mode-card {
+  position: relative;
+  background: rgba(255,255,255,0.5);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border-radius: calc(20 * var(--u));
+  padding: calc(14 * var(--u)) calc(16 * var(--u));
+  cursor: pointer;
+  transition: transform 0.15s var(--ease-spring), box-shadow 0.2s;
+  box-shadow:
+    0 calc(8 * var(--u)) calc(24 * var(--u)) rgba(0,0,0,0.1),
+    inset 0 calc(2 * var(--u)) 0 rgba(255,255,255,0.8),
+    0 0 0 calc(1 * var(--u)) rgba(255,255,255,0.6);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: calc(8 * var(--u));
+}
+.lobby-mode-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: calc(24 * var(--u));
+  pointer-events: none;
+  z-index: 0;
+}
+/* 顶部高光 */
+.lobby-mode-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 10%; right: 10%;
+  height: 35%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.6), transparent);
+  border-radius: calc(24 * var(--u)) calc(24 * var(--u)) 0 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 三副牌（第2个grid item）- 暖橙黄渐变 */
+.lobby-mode-card:nth-child(2)::before {
+  background: linear-gradient(160deg, rgba(255,247,210,0.95) 0%, rgba(255,228,150,0.85) 45%, rgba(255,250,230,0.9) 100%);
+}
+/* 建房（第3个grid item）- 浅蓝紫渐变 */
+.lobby-mode-card:nth-child(3)::before {
+  background: linear-gradient(160deg, rgba(240,248,255,0.95) 0%, rgba(220,230,255,0.85) 45%, rgba(245,248,255,0.9) 100%);
+}
+/* 两副牌（第4个grid item）- 青绿渐变 */
+.lobby-mode-card:nth-child(4)::before {
+  background: linear-gradient(160deg, rgba(232,252,243,0.95) 0%, rgba(190,242,220,0.85) 45%, rgba(240,253,248,0.9) 100%);
+}
+/* 比赛场（第5个grid item）- 暖紫金渐变 */
+.lobby-mode-card:nth-child(5)::before {
+  background: linear-gradient(160deg, rgba(255,248,220,0.95) 0%, rgba(254,235,170,0.85) 45%, rgba(255,252,235,0.9) 100%);
+}
+.lobby-mode-card:active { transform: scale(0.96); }
+
+.lobby-mode-tag {
+  display: inline-block;
+  padding: calc(3 * var(--u)) calc(12 * var(--u));
+  border-radius: calc(16 * var(--u));
+  font-size: calc(11 * var(--ut));
+  font-weight: 800;
+  color: #fff;
+  width: fit-content;
+  letter-spacing: 0;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0,0,0,0.2);
+}
+.lobby-mode-tag--orange { background: linear-gradient(135deg, #FB923C, #EA580C); }
+.lobby-mode-tag--green { background: linear-gradient(135deg, #34D399, #059669); }
+.lobby-mode-tag--purple { background: linear-gradient(135deg, #A78BFA, #7C3AED); }
+.lobby-mode-tag--blue { background: linear-gradient(135deg, #60A5FA, #2563EB); }
+
+.lobby-mode-title {
+  font-size: calc(30 * var(--u));
+  font-weight: 800;
+  color: #1E293B;
+  line-height: 1.1;
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+}
+.lobby-mode-sub {
+  font-size: max(calc(13 * var(--ut)), 11px);
+  color: #475569;
+  font-weight: 600;
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lobby-mode-people {
+  font-size: max(calc(12 * var(--ut)), 10px);
+  color: #065F46;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: calc(6 * var(--u));
+  margin-top: calc(6 * var(--u));
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* 不允许被父级 column flex 压缩，否则 overflow:hidden 会切掉字的上下缘 */
+  flex-shrink: 0;
+  line-height: 1.35;
+  /* 给足行盒高度，中文的下伸部分（"玩"的竖钩）才不会贴边 */
+  min-height: 1.35em;
+}
+.lobby-mode-people::before {
+  content: '';
+  flex: 0 0 auto;
+  width: max(calc(8 * var(--u)), 5px);
+  height: max(calc(8 * var(--u)), 5px);
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 calc(4 * var(--u)) rgba(16,185,129,0.6);
+}
+
+/* 模式卡右上角图标 */
+.lobby-mode-top-icon {
+  position: absolute;
+  top: calc(16 * var(--u));
+  right: calc(16 * var(--u));
+  z-index: 1;
+  height: calc(52 * var(--u));
+  display: flex;
+  align-items: flex-end;
+}
+
+.mode-cards-icon {
+  position: relative;
+  width: calc(64 * var(--u));
+  height: calc(52 * var(--u));
+}
+/* 两副牌图标 - 两张不同花色的牌 */
+.mode-cards-icon.two-decks {
+  width: calc(64 * var(--u));
+  height: calc(52 * var(--u));
+}
+.mode-cards-icon.two-decks .mode-card-1 {
+  background: linear-gradient(135deg, #fff 0%, #F0FDF4 100%);
+}
+.mode-cards-icon.two-decks .mode-card-1::after {
+  content: '♣';
+  color: #059669;
+}
+.mode-cards-icon.two-decks .mode-card-2 {
+  background: linear-gradient(135deg, #fff 0%, #FEF3C7 100%);
+}
+.mode-cards-icon.two-decks .mode-card-2::after {
+  content: '♦';
+  color: #F59E0B;
+}
+.mode-cards-icon .mode-card {
+  position: absolute;
+  width: calc(48 * var(--u));
+  height: calc(56 * var(--u));
+  background: #fff;
+  border-radius: calc(8 * var(--u));
+  box-shadow:
+    0 calc(3 * var(--u)) calc(10 * var(--u)) rgba(0,0,0,0.15),
+    inset 0 calc(1 * var(--u)) 0 rgba(255,255,255,0.8);
+  border: calc(2 * var(--u)) solid #fff;
+}
+.mode-cards-icon .mode-card-1 {
+  left: 0; top: 0;
+  background: linear-gradient(135deg, #fff 0%, #FFF5F5 100%);
+  z-index: 1;
+}
+.mode-cards-icon .mode-card-1::after {
+  content: '♥';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: calc(26 * var(--u));
+  color: #EF4444;
+}
+.mode-cards-icon .mode-card-2 {
+  right: 0; bottom: 0;
+  background: linear-gradient(135deg, #fff 0%, #FEF2F2 100%);
+  z-index: 2;
+  transform: rotate(8deg);
+  opacity: 0.9;
+}
+
+.mode-avatars { display: flex; align-items: flex-end; }
+.mode-avatars .mode-avatar {
+  width: calc(44 * var(--u));
+  height: calc(44 * var(--u));
+  border-radius: 50%;
+  border: calc(3 * var(--u)) solid #fff;
+  margin-left: calc(-16 * var(--u));
+  box-shadow:
+    0 calc(3 * var(--u)) calc(10 * var(--u)) rgba(0,0,0,0.15),
+    inset 0 calc(1 * var(--u)) 0 rgba(255,255,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: calc(16 * var(--u));
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.mode-avatars .mode-avatar:first-child { margin-left: 0; }
+.mode-avatars .mode-avatar--plus { background: linear-gradient(135deg, #5EEAD4, #14B8A6) !important; }
+.mode-avatars .mode-avatar--yellow { background: linear-gradient(135deg, #FCD34D, #F59E0B); }
+.mode-avatars .mode-avatar--red { background: linear-gradient(135deg, #FCA5A5, #EF4444); }
+.mode-avatars .mode-avatar--teal { background: linear-gradient(135deg, #5EEAD4, #14B8A6); }
+.mode-avatars .mode-avatar--blue { background: linear-gradient(135deg, #93C5FD, #3B82F6); }
+
+.mode-treasure {
+  position: relative;
+  width: calc(72 * var(--u));
+  height: calc(56 * var(--u));
+  display: flex;
+  align-items: flex-end;
+}
+.mode-treasure .treasure-coin {
+  position: absolute;
+  left: 0; bottom: calc(4 * var(--u));
+  width: calc(36 * var(--u));
+  height: calc(36 * var(--u));
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, #FDE68A, #D97706);
+  box-shadow:
+    0 calc(3 * var(--u)) calc(10 * var(--u)) rgba(0,0,0,0.2),
+    inset 0 calc(1 * var(--u)) 0 rgba(255,255,255,0.4);
+  z-index: 1;
+}
+.mode-treasure .treasure-gem {
+  position: absolute;
+  left: calc(20 * var(--u));
+  top: 0;
+  width: calc(32 * var(--u));
+  height: calc(38 * var(--u));
+  background: linear-gradient(135deg, #C4B5FD, #8B5CF6);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  box-shadow:
+    0 calc(3 * var(--u)) calc(10 * var(--u)) rgba(0,0,0,0.2),
+    inset calc(3 * var(--u)) calc(2 * var(--u)) 0 rgba(255,255,255,0.4);
+  transform: rotate(-10deg);
+  z-index: 2;
+}
+.mode-treasure .treasure-redpacket {
+  position: absolute;
+  right: 0; bottom: 0;
+  width: calc(32 * var(--u));
+  height: calc(38 * var(--u));
+  background: linear-gradient(135deg, #FCA5A5, #DC2626);
+  border-radius: calc(6 * var(--u));
+  box-shadow:
+    0 calc(3 * var(--u)) calc(10 * var(--u)) rgba(0,0,0,0.2),
+    inset 0 calc(1 * var(--u)) 0 rgba(255,255,255,0.3);
+  z-index: 3;
+}
+.mode-treasure .treasure-redpacket::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(12 * var(--u));
+  height: calc(12 * var(--u));
+  border-radius: 50%;
+  background: #FCD34D;
+}
+
+/* ---- 副牌卡片：大字大图标居中排版 ---- */
+.lobby-mode-card--deck {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: calc(16 * var(--u)) calc(18 * var(--u));
+  gap: 0;
+}
+.lobby-mode-card--deck .lobby-mode-tag {
+  position: absolute;
+  top: calc(14 * var(--u));
+  left: calc(14 * var(--u));
+  z-index: 2;
+}
+.lobby-mode-card--deck .lobby-mode-top-icon {
+  position: static;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1 1 auto;
+  /* column flex 下 min-height 默认是 auto，flex:1 其实压不下去。
+     显式给 0 之后，卡片变矮时由这块图标区让出空间，
+     而不是去挤下面的"xxx人在玩"（那行一挤就被 overflow 切字）。 */
+  min-height: 0;
+  height: auto;
+  /* 兜底：图标区再怎么算错也不许溢出到标题上 */
+  overflow: hidden;
+  margin: calc(8 * var(--u)) 0 calc(6 * var(--u));
+}
+/* 这里原来写的是 width:80u;height:68u;transform:scale(1.25)。
+   transform 只改绘制、不改布局盒 —— 图标视觉上比布局盒高 17u/宽 20u，
+   多出来的部分直接压在「三副牌 / 两副牌」标题上（844x390 实测标题字形
+   与图标重叠 2.7px，667x340 重叠 5.4px）。
+   也不能改成写死的放大值：卡片高度是 grid 分的（横屏只有 95~126px），
+   减去标题+人数后留给图标的净高只有 43~66px，写死必然再次溢出。
+   正解 = 高度吃满图标区、按固定比例推宽度，牌面用百分比跟随。 */
+.lobby-mode-card--deck .mode-cards-icon {
+  flex: 0 0 auto;
+  min-height: 0;
+  height: 100%;
+  width: auto;
+  /* 比原来更宽的比例：图标区的净高被卡片高度锁死（横屏只有 33~52px），
+     想让图标看起来不缩水只能往横向借空间。 */
+  aspect-ratio: 1.3;
+  max-width: 100%;
+  transform: none;
+  /* 第二张牌有 8° 旋转，会向右下外扩约 0.14×牌高。父级是 overflow:hidden，
+     不留这圈内边距就会被切角（实测竖屏切掉右侧 14.4px）。
+     绝对定位子元素以 padding box 为基准，所以这里加 padding 正好当安全边。 */
+  padding: 4% 9%;
+  box-sizing: border-box;
+  /* 竖屏时卡片高 312px，图标区吃满会把牌撑到 150px 以上：
+     一是比例失衡，二是 max-width 生效后 aspect-ratio 只压宽不压高，
+     旋转外扩再次被 overflow 切角（实测右侧切 14.4px）。给绝对上限。 */
+  max-height: calc(96 * var(--u));
+}
+.lobby-mode-card--deck .mode-cards-icon .mode-card {
+  /* 百分比 + 保持 0.857 的扑克牌长宽比；第二张有 8° 旋转，
+     留 12% 余量给旋转外扩，否则被父级 overflow:hidden 切角。 */
+  width: 62%;
+  height: 88%;
+}
+.lobby-mode-card--deck .mode-cards-icon .mode-card-2 { bottom: 4%; }
+/* 花色字号跟着图标区高度走（图标区已是自适应高度），
+   用 --u 会在窄卡上偏大溢出牌面。 */
+.lobby-mode-card--deck .mode-cards-icon .mode-card-1::after,
+.lobby-mode-card--deck .mode-cards-icon .mode-card-2::after {
+  font-size: min(calc(40 * var(--u)), 26px);
+}
+.lobby-mode-card--deck .lobby-mode-title {
+  flex: 0 0 auto;
+  font-size: calc(32 * var(--u));
+  font-weight: 900;
+  margin-top: 0;
+  text-align: left;
+  line-height: 1.1;
+}
+.lobby-mode-card--deck .lobby-mode-sub {
+  display: none;
+}
+.lobby-mode-card--deck .lobby-mode-people {
+  margin-top: calc(6 * var(--u));
+  font-size: max(calc(12 * var(--ut)), 10px);
+  flex-shrink: 0;
+}
+
+.lobby-mode-card--soon {
+  /* filter 会作用到所有后代，包括「即将上线」徽章 —— 徽章被一起灰掉后
+     反而看不清。改成只降饰图/文字，徽章保持满饱和。 */
+  cursor: not-allowed;
+}
+.lobby-mode-card--soon .lobby-mode-top-icon,
+.lobby-mode-card--soon .lobby-mode-title,
+.lobby-mode-card--soon .lobby-mode-sub {
+  filter: grayscale(0.55);
+  opacity: 0.85;
+}
+/* 只屏蔽内容层的命中，卡片本体仍可点 -> onClick 的「筹备中」提示才有反馈 */
+.lobby-mode-card--soon > * { pointer-events: none; }
+.lobby-mode-card--soon:active { transform: scale(0.985); }
+/* 徽章改用真实节点 .lobby-mode-soon-badge。
+   原来写成 .lobby-mode-card--soon::before，会和
+   .lobby-mode-card:nth-child(5)::before（画卡片底色渐变）抢同一个伪元素：
+   后者被覆盖 -> 比赛场卡直接丢掉背景，徽章还继承了那条渐变。 */
+.lobby-mode-soon-badge {
+  position: absolute;
+  top: calc(10 * var(--u));
+  left: calc(10 * var(--u));
+  padding: calc(4 * var(--u)) calc(10 * var(--u));
+  background: linear-gradient(135deg, #6D28D9, #4C1D95);
+  color: #FDE68A;
+  border: calc(1 * var(--u)) solid rgba(251,191,36,0.5);
+  font-size: max(calc(11 * var(--ut)), 10px);
+  font-weight: 800;
+  letter-spacing: calc(1 * var(--u));
+  line-height: 1.3;
+  white-space: nowrap;
+  border-radius: calc(20 * var(--u));
+  z-index: 20;
+  box-shadow: 0 calc(2 * var(--u)) calc(6 * var(--u)) rgba(0,0,0,0.3);
+}
+/* 禁用蒙层：不能再用 ::after（那是 .lobby-mode-card::after 的顶部高光），
+   用 inset box-shadow 铺满整卡实现压暗，且不占用任何伪元素。 */
+.lobby-mode-card--soon {
+  box-shadow:
+    0 calc(8 * var(--u)) calc(24 * var(--u)) rgba(0,0,0,0.1),
+    inset 0 0 0 calc(200 * var(--u)) rgba(20, 15, 44, 0.3);
+}
+
+/* ============================================================
+   底部：左圆钮 + 右快速开始
+   ============================================================ */
+.lobby-bottom {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(16 * var(--u)) calc(64 * var(--u)) calc(24 * var(--u));
+  position: relative;
+  z-index: 15;
+}
+
+.lobby-circle-nav {
+  display: flex;
+  align-items: center;
+  gap: calc(32 * var(--u));
+}
+.lobby-circle-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(6 * var(--u));
+  cursor: pointer;
+  transition: transform 0.15s var(--ease-spring);
+}
+.lobby-circle-btn:active { transform: scale(0.9); }
+.lobby-circle-icon {
+  width: calc(64 * var(--u));
+  height: calc(64 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: calc(24 * var(--u));
+  border: none;
+  position: relative;
+}
+.lobby-circle-label {
+  font-size: max(calc(14 * var(--ut)), 11px);
+  font-weight: 700;
+  color: #fff;
+  /* 底下是背景大图，局部有亮蓝区域，纯 text-shadow 压不住 ->
+     给一层深紫底托，保证任何壁纸下都够对比。 */
+  padding: calc(1 * var(--u)) calc(6 * var(--u));
+  border-radius: calc(10 * var(--u));
+  background: rgba(20, 15, 44, 0.72);
+  text-shadow: 0 calc(1 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,0.8);
+  opacity: 1;
+  letter-spacing: calc(1 * var(--u));
+}
+
+/* 快速开始按钮 — 紫金国潮风格 */
+.lobby-quick-btn {
+  min-width: calc(340 * var(--u));
+  height: calc(76 * var(--u));
+  padding: 0 calc(40 * var(--u)) 0 calc(28 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: calc(14 * var(--u));
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 30%),
+    linear-gradient(135deg,
+      #7C3AED 0%,
+      #6D28D9 30%,
+      #5B21B6 65%,
+      #4C1D95 100%);
+  border: calc(2 * var(--u)) solid rgba(251, 191, 36, 0.8);
+  border-radius: calc(50 * var(--u));
+  font-size: calc(34 * var(--u));
+  font-weight: 900;
+  color: #FEF3C7;
+  letter-spacing: calc(10 * var(--u));
+  cursor: pointer;
+  transition: all 0.2s var(--ease-spring);
+  box-shadow:
+    0 calc(8 * var(--u)) calc(24 * var(--u)) rgba(91, 33, 182, 0.5),
+    0 0 calc(16 * var(--u)) rgba(251, 191, 36, 0.15) inset,
+    0 calc(1 * var(--u)) 0 rgba(255,255,255,0.2) inset;
+  text-shadow:
+    0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0,0,0,0.3);
+  position: relative;
+  overflow: hidden;
+  font-family: inherit;
+}
+/* 左侧小字
+   注意三点，缺一个就会在手机横屏折行/错位：
+   1) flex:0 0 auto —— 默认 0 1 auto 会被 flex 容器压缩，
+      而它的单行宽度本来就正好等于内容宽度（844 宽实测 83.3px == 83.3px），
+      被压 1px 就折成两行；
+   2) white-space:nowrap —— 折行的直接开关；
+   3) 字号走 --ut 并给 11px 绝对下限 —— --u 在横屏被 clamp 到 0.63px，
+      18*--u 只有 8.8px，小到看不清。 */
+.lobby-quick-btn .quick-btn-prefix {
+  font-size: max(calc(16 * var(--ut)), 11px);
+  font-weight: 700;
+  color: rgba(254, 243, 199, 0.88);
+  letter-spacing: 0;
+  margin-right: auto;
+  padding-left: calc(8 * var(--u));
+  flex: 0 0 auto;
+  white-space: nowrap;
+  line-height: 1.25;
+}
+.lobby-quick-btn .quick-btn-main {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  line-height: 1.15;
+}
+/* 按钮边缘金色光晕 */
+.lobby-quick-btn::before {
+  content: '';
+  position: absolute;
+  inset: calc(-2 * var(--u));
+  border-radius: calc(50 * var(--u));
+  background: linear-gradient(135deg, rgba(251,191,36,0.4), rgba(245,158,11,0.2));
+  filter: blur(calc(8 * var(--u)));
+  z-index: -1;
+  opacity: 0.8;
+}
+/* 顶部微光 */
+.lobby-quick-btn::after {
+  content: '';
+  position: absolute;
+  top: calc(3 * var(--u));
+  left: 20%; right: 20%;
+  height: calc(6 * var(--u));
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255,255,255,0.25) 50%,
+    transparent 100%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.lobby-quick-btn:hover {
+  transform: translateY(calc(-2 * var(--u)));
+  box-shadow:
+    0 calc(10 * var(--u)) calc(28 * var(--u)) rgba(91, 33, 182, 0.55),
+    0 0 calc(20 * var(--u)) rgba(251, 191, 36, 0.25) inset,
+    0 calc(1 * var(--u)) 0 rgba(255,255,255,0.25) inset;
+}
+.lobby-quick-btn:active {
+  transform: translateY(calc(1 * var(--u))) scale(0.97);
+  box-shadow:
+    0 calc(4 * var(--u)) calc(14 * var(--u)) rgba(91, 33, 182, 0.5),
+    0 0 calc(12 * var(--u)) rgba(251, 191, 36, 0.1) inset;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ============================================================
+   视图动画
+   ============================================================ */
+.lobby-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  animation: fadeInUp 0.3s var(--ease-out);
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(calc(10 * var(--u))); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   弹窗
+   ============================================================ */
+.lobby-modal-mask {
+  position: fixed;
+  inset: 0;
+  /* 深色弹窗需要更暗的底，否则紫金弹窗压在紫蓝大厅背景上层次分不开 */
+  background: rgba(8, 12, 30, 0.68);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.25s ease-out;
+  padding: calc(24 * var(--u));
+}
+
+.lobby-modal {
+  position: relative;
+  width: 100%;
+  /* 竖屏基准宽。--u 在窄屏被 clamp 到 0.55px，纯 u 值算出来偏小，
+     再叠一个 vw 下限，保证在任何机型上都占到足够视觉体量。 */
+  max-width: min(calc(560 * var(--u)), 94vw);
+  width: 100%;
+  /* 顶到视口就自己滚，绝不把内容顶出屏幕外（横屏可用高常常只有 340~390px） */
+  max-height: calc(100dvh - 24 * var(--u));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* 深色紫金国潮：与牌桌面板（rgba(18,26,44,.97)）同一个色系，
+     再叠一层紫调渐变和顶部金色光晕，跟大厅「快速开始」的紫金呼应。 */
+  background:
+    radial-gradient(ellipse 90% 50% at 50% 0%, rgba(251, 191, 36, 0.10) 0%, transparent 70%),
+    linear-gradient(180deg, #241B4A 0%, #1A1438 55%, #140F2C 100%);
+  border-radius: calc(22 * var(--u));
+  padding: calc(30 * var(--u)) calc(32 * var(--u)) calc(26 * var(--u));
+  box-shadow:
+    0 calc(24 * var(--u)) calc(64 * var(--u)) rgba(0, 0, 0, 0.55),
+    0 0 calc(40 * var(--u)) rgba(124, 58, 237, 0.18);
+  animation: scaleIn 0.3s var(--ease-spring);
+  /* 金色描边：国潮质感的关键，1px 太细，用 2u + 内发光 */
+  border: calc(2 * var(--u)) solid rgba(251, 191, 36, 0.42);
+  /* 弹窗内文字默认色。改深底之后这一条是必须的：body 的继承色是深蓝
+     #0F2E70，任何没显式写 color 的文案（将来新加的字段、空状态等）
+     都会变成深蓝压在深紫底上，几乎看不见。 */
+  color: rgba(255, 255, 255, 0.88);
+}
+/* 顶部金色高光条（原来用 border-image，会和 border 打架，改成伪元素） */
+.lobby-modal::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 12%; right: 12%;
+  height: calc(2 * var(--u));
+  background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.9), transparent);
+  border-radius: calc(2 * var(--u));
+  pointer-events: none;
+}
+/* 表单体默认（竖屏）保持单列，横屏在下面的 media 里变两列 */
+.lobby-modal-body { display: block; }
+.lobby-modal-close {
+  position: absolute;
+  top: calc(14 * var(--u)); right: calc(14 * var(--u));
+  width: calc(36 * var(--u)); height: calc(36 * var(--u));
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  border: calc(1 * var(--u)) solid rgba(255, 255, 255, 0.16);
+  transition: background 0.15s, color 0.15s;
+}
+.lobby-modal-close:hover { background: rgba(255, 255, 255, 0.16); color: #FEF3C7; }
+.lobby-modal-close:active { background: rgba(255, 255, 255, 0.22); }
+
+.lobby-modal-title {
+  font-size: calc(22 * var(--ut));
+  font-weight: 900;
+  /* 金色渐变字：深色底上最有国潮味，也和大厅 logo / 快速开始同调 */
+  background: linear-gradient(180deg, #FEF3C7 0%, #FCD34D 55%, #F0A020 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #FCD34D;   /* 不支持 background-clip 时的回落 */
+  text-align: center;
+  letter-spacing: 0.06em;
+  margin-bottom: calc(22 * var(--u));
+}
+.lobby-modal-title::after {
+  content: '';
+  display: block;
+  width: calc(48 * var(--u));
+  height: calc(4 * var(--u));
+  margin: calc(10 * var(--u)) auto 0;
+  background: linear-gradient(90deg, transparent, #FBBF24, transparent);
+  border-radius: calc(2 * var(--u));
+}
+
+.lobby-modal-field { margin-bottom: calc(18 * var(--u)); }
+.lobby-modal-label {
+  display: block;
+  font-size: calc(14 * var(--ut));
+  font-weight: 700;
+  color: rgba(253, 230, 138, 0.92);   /* 淡金，深底上比灰蓝清楚得多 */
+  margin-bottom: calc(8 * var(--u));
+  letter-spacing: 0.02em;
+}
+.lobby-modal-input {
+  width: 100%;
+  height: calc(50 * var(--u));
+  padding: 0 calc(16 * var(--u));
+  font-size: calc(18 * var(--ut));
+  font-weight: 700;
+  color: #FEF3C7;
+  background: rgba(0, 0, 0, 0.28);
+  border: calc(2 * var(--u)) solid rgba(255, 255, 255, 0.14);
+  border-radius: calc(12 * var(--u));
+  outline: none;
+  transition: all 0.15s;
+  text-align: center;
+  letter-spacing: 0.1em;
+  box-shadow: inset 0 calc(2 * var(--u)) calc(6 * var(--u)) rgba(0, 0, 0, 0.35);
+}
+.lobby-modal-input::placeholder { color: rgba(255, 255, 255, 0.34); font-weight: 600; letter-spacing: 0.04em; }
+.lobby-modal-input:focus {
+  border-color: rgba(251, 191, 36, 0.75);
+  background: rgba(0, 0, 0, 0.35);
+  box-shadow:
+    0 0 0 calc(3 * var(--u)) rgba(251, 191, 36, 0.18),
+    inset 0 calc(2 * var(--u)) calc(6 * var(--u)) rgba(0, 0, 0, 0.3);
+}
+.lobby-modal-hint {
+  font-size: calc(12 * var(--ut));
+  color: rgba(255, 255, 255, 0.52);
+  margin-top: calc(8 * var(--u));
+}
+
+.lobby-modal-actions {
+  display: flex;
+  gap: calc(14 * var(--u));
+  margin-top: calc(28 * var(--u));
+}
+.lobby-modal-btn {
+  flex: 1;
+  height: calc(52 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(15 * var(--ut));
+  font-weight: 800;
+  border-radius: calc(14 * var(--u));
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+  font-family: inherit;
+}
+.lobby-modal-btn:active { transform: scale(0.97); }
+.lobby-modal-btn--ghost {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.82);
+  border: calc(2 * var(--u)) solid rgba(255, 255, 255, 0.18);
+  font-weight: 700;
+}
+.lobby-modal-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #FEF3C7;
+}
+.lobby-modal-btn--primary {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.15) 0%, transparent 30%),
+    linear-gradient(135deg,
+      #7C3AED 0%,
+      #6D28D9 30%,
+      #5B21B6 65%,
+      #4C1D95 100%);
+  color: #FEF3C7;
+  border: calc(2 * var(--u)) solid rgba(251, 191, 36, 0.8);
+  box-shadow:
+    0 calc(4 * var(--u)) calc(16 * var(--u)) rgba(91, 33, 182, 0.5),
+    0 0 calc(18 * var(--u)) rgba(251, 191, 36, 0.2),
+    inset 0 calc(1 * var(--u)) 0 rgba(255,255,255,0.24);
+  text-shadow: 0 calc(1 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,0.3);
+}
+
+.lobby-modal-err {
+  padding: calc(12 * var(--u)) calc(16 * var(--u));
+  font-size: calc(13 * var(--ut));
+  color: #FCA5A5;
+  background: rgba(239, 68, 68, 0.14);
+  border-radius: calc(10 * var(--u));
+  margin-bottom: calc(14 * var(--u));
+  border: calc(1 * var(--u)) solid #FECACA;
+}
+
+.lobby-ai-selector { display: flex; gap: calc(10 * var(--u)); }
+.lobby-ai-chip {
+  flex: 1;
+  height: calc(44 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: calc(2 * var(--u)) solid rgba(255, 255, 255, 0.14);
+  border-radius: calc(11 * var(--u));
+  font-size: calc(14 * var(--ut));
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.lobby-ai-chip.is-active {
+  border-color: rgba(251, 191, 36, 0.85);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 40%),
+    linear-gradient(135deg, #7C3AED 0%, #6D28D9 40%, #5B21B6 100%);
+  color: #FEF3C7;
+  box-shadow:
+    0 0 calc(12 * var(--u)) rgba(251, 191, 36, 0.26),
+    inset 0 calc(1 * var(--u)) 0 rgba(255, 255, 255, 0.22);
+}
+
+/* ============================================================
+   战绩侧栏
+   ============================================================ */
+.lobby-side {
+  position: fixed;
+  top: 0; right: 0;
+  width: min(calc(380 * var(--u)), 85vw);
+  height: 100%;
+  background: #fff;
+  z-index: 90;
+  transform: translateX(100%);
+  transition: transform 0.3s var(--ease-out);
+  display: flex;
+  flex-direction: column;
+  box-shadow: calc(-8 * var(--u)) 0 calc(30px * var(--u)) rgba(0,0,0,0.2);
+}
+.lobby-side.is-open { transform: translateX(0); }
+.lobby-side-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(18 * var(--u)) calc(22 * var(--u));
+  border-bottom: 1px solid #F1F5F9;
+  background: linear-gradient(180deg, #F8FAFC, #fff);
+}
+.lobby-side-title {
+  font-size: calc(18 * var(--ut));
+  font-weight: 800;
+  color: #1E3A8A;
+}
+.lobby-side-close {
+  width: calc(36 * var(--u)); height: calc(36 * var(--u));
+  display: flex; align-items: center; justify-content: center;
+  background: #F1F5F9;
+  border-radius: 50%;
+  border: none;
+  font-size: calc(20 * var(--u));
+  color: #64748B;
+  cursor: pointer;
+}
+.lobby-side-body { flex: 1; overflow-y: auto; padding: calc(14 * var(--u)); }
+.lobby-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(14 * var(--u)) calc(16 * var(--u));
+  background: #F8FAFC;
+  border-radius: calc(14 * var(--u));
+  margin-bottom: calc(10 * var(--u));
+  border: calc(1 * var(--u)) solid #E2E8F0;
+}
+.lobby-history-result { font-size: calc(18 * var(--ut)); font-weight: 800; }
+.lobby-history-result.win { color: #059669; }
+.lobby-history-result.lose { color: #DC2626; }
+.lobby-history-meta { font-size: calc(12 * var(--ut)); color: #94A3B8; margin-top: calc(4 * var(--u)); }
+
+/* ============================================================
+   Toast
+   ============================================================ */
+.lobby-toast {
+  position: fixed;
+  top: calc(80 * var(--u));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  max-width: 80vw;
+  padding: calc(12 * var(--u)) calc(24 * var(--u));
+  background: linear-gradient(135deg, #C81E1E, #A81616);
+  border-radius: calc(14 * var(--u));
+  color: #fff;
+  font-size: calc(14 * var(--ut));
+  font-weight: 600;
+  text-align: center;
+  box-shadow:
+    0 calc(6 * var(--u)) calc(20px * var(--u)) rgba(220,38,38,0.4),
+    inset 0 calc(2 * var(--u)) 0 rgba(255,255,255,0.2);
+  cursor: pointer;
+  animation: toastIn 0.3s var(--ease-spring);
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(calc(-10 * var(--u))); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ============================================================
+   非play页全屏浮层
+   ============================================================ */
+.lobby-subpage-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  background: var(--grad-page);
+  animation: fadeIn 0.25s ease-out;
+}
+
+.lobby-subpage-content {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.lobby-subpage-content > * {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+}
+
+/* ============================================================
+   非play页底部tabbar
+   ============================================================ */
+.lobby-tabbar--sub {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-around;
+  padding: calc(10 * var(--u)) calc(16 * var(--u)) calc(10 * var(--u) + env(safe-area-inset-bottom));
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.98));
+  box-shadow: 0 calc(-4 * var(--u)) calc(20 * var(--u)) rgba(0,0,0,0.08);
+  border-radius: calc(24 * var(--u)) calc(24 * var(--u)) 0 0;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  position: relative;
+  z-index: 20;
+}
+.lobby-tabbar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(3 * var(--u));
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: calc(6 * var(--u)) calc(10 * var(--u));
+  color: #94A3B8;
+  font-weight: 500;
+  font-size: calc(12 * var(--ut));
+  position: relative;
+  transition: color 0.15s;
+}
+.lobby-tabbar-item.is-active {
+  color: #4F46E5;
+  font-weight: 700;
+}
+.lobby-tabbar-badge {
+  position: absolute;
+  top: 0; right: calc(6 * var(--u));
+  background: #C81E1E;
+  color: #fff;
+  border-radius: calc(12 * var(--u));
+  padding: 0 calc(6 * var(--u));
+  font-size: calc(11 * var(--u));
+  font-weight: 700;
+  line-height: 1.6;
+  border: calc(2 * var(--u)) solid #fff;
+  box-shadow: 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(239,68,68,0.3);
+}
+
+/* ============================================================
+   建房 / 加入房间：模式选择与底部双按钮
+   ============================================================ */
+.lobby-mode-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: calc(8 * var(--u));
+}
+.lobby-mode-option {
+  /* 模式名 + 副数两行居中：原来是「3人 2副」单行塞两个维度，
+     窄横屏的按钮里会挤成两行且断行位置很难看。 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(1 * var(--u));
+  height: calc(46 * var(--u));
+  border: calc(2 * var(--u)) solid rgba(255, 255, 255, 0.14);
+  border-radius: calc(10 * var(--u));
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: calc(12 * var(--ut));
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1.15;
+  padding: 0 calc(4 * var(--u));
+}
+.lobby-mode-option-name { font-size: calc(12 * var(--ut)); font-weight: 800; white-space: nowrap; }
+.lobby-mode-option-deck {
+  font-size: calc(10 * var(--ut));
+  font-weight: 700;
+  opacity: 0.75;
+  letter-spacing: 0.02em;
+}
+.lobby-mode-option.is-active .lobby-mode-option-deck { opacity: 0.9; }
+/* 选中态跟大厅「快速开始」同一套紫金：原来是靛蓝 #6366F1，
+   和同一个弹窗里紫金渐变的主按钮并排看着像两个产品。 */
+/* 选中态：紫金渐变 + 金边 + 金色光晕，和大厅「快速开始」同一套语言 */
+.lobby-mode-option.is-active {
+  border-color: rgba(251, 191, 36, 0.85);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 40%),
+    linear-gradient(135deg, #7C3AED 0%, #6D28D9 40%, #5B21B6 100%);
+  color: #FEF3C7;
+  box-shadow:
+    0 0 calc(14 * var(--u)) rgba(251, 191, 36, 0.28),
+    inset 0 calc(1 * var(--u)) 0 rgba(255, 255, 255, 0.22);
+  text-shadow: 0 calc(1 * var(--u)) calc(2 * var(--u)) rgba(0, 0, 0, 0.35);
+}
+/* ============================================================
+   建房弹窗：房间类型二选一（金币局 / 房卡局）
+   ------------------------------------------------------------
+   为什么做成两张大卡而不是一个开关：两种局的钱包后果完全不同
+   （一种输真金币、一种只扣一张房卡），必须把区别写在按钮上，
+   不能靠玩家自己猜一个叫「房卡局」的开关是什么意思。
+   ============================================================ */
+.lobby-roomtype {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(10 * var(--u));
+}
+.lobby-roomtype-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: calc(4 * var(--u));
+  padding: calc(9 * var(--u)) calc(12 * var(--u));
+  border: calc(2 * var(--u)) solid rgba(255, 255, 255, 0.14);
+  border-radius: calc(10 * var(--u));
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+.lobby-roomtype-name {
+  display: flex;
+  align-items: center;
+  gap: calc(6 * var(--u));
+  font-size: calc(13 * var(--ut));
+  font-weight: 800;
+  white-space: nowrap;
+}
+/* 「我有 N 张」徽章：玩家必须在点之前就看到自己有没有卡，
+   否则点下去才报「房卡不足」是很差的体验。 */
+.lobby-roomtype-badge {
+  padding: 0 calc(6 * var(--u));
+  border-radius: calc(999 * var(--u));
+  background: rgba(251, 191, 36, 0.18);
+  border: calc(1 * var(--u)) solid rgba(251, 191, 36, 0.45);
+  color: #FDE68A;
+  font-size: calc(10 * var(--ut));
+  font-weight: 700;
+  white-space: nowrap;
+}
+.lobby-roomtype-sub {
+  font-size: calc(11 * var(--ut));
+  font-weight: 600;
+  opacity: 0.72;
+  line-height: 1.35;
+  /* 说明文案较长，必须允许换行（nowrap 会直接撑破弹窗） */
+  white-space: normal;
+}
+.lobby-roomtype-option.is-active {
+  border-color: rgba(251, 191, 36, 0.85);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 40%),
+    linear-gradient(135deg, #7C3AED 0%, #6D28D9 40%, #5B21B6 100%);
+  color: #FEF3C7;
+  box-shadow:
+    0 0 calc(14 * var(--u)) rgba(251, 191, 36, 0.28),
+    inset 0 calc(1 * var(--u)) 0 rgba(255, 255, 255, 0.22);
+}
+/* 房卡不足：只做“发红 + 变淡”的提示，**不用 disabled** ——
+   还得能点进去看到提示文案，直接置灰不可点反而不知道为什么。 */
+.lobby-roomtype-option.is-lack .lobby-roomtype-badge {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #FCA5A5;
+}
+.lobby-roomtype-option.is-lack .lobby-roomtype-sub { color: #FCA5A5; opacity: 0.95; }
+
+.lobby-bottom-actions {
+  display: flex;
+  align-items: center;
+  gap: calc(12 * var(--u));
+}
+.lobby-friend-actions {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: calc(8 * var(--u));
+  padding: calc(12 * var(--u)) calc(5 * var(--u)) calc(4 * var(--u));
+  border-radius: calc(18 * var(--u));
+  background: rgba(20, 18, 58, 0.34);
+}
+.lobby-friend-label {
+  position: absolute;
+  top: calc(1 * var(--u));
+  left: calc(12 * var(--u));
+  color: rgba(255, 255, 255, 0.72);
+  font-size: max(calc(10 * var(--ut)), 9px);
+  font-weight: 700;
+  letter-spacing: calc(1 * var(--u));
+  line-height: 1;
+}
+.lobby-primary-action {
+  box-shadow:
+    0 0 calc(18 * var(--u)) rgba(250, 204, 21, 0.5),
+    0 calc(8 * var(--u)) calc(18 * var(--u)) rgba(76, 29, 149, 0.46);
+}
+
+/* ── 断网提示与禁用态 ──────────────────────────────────────────
+ * 大厅原来断网时按钮照常可点，点了要等 SDK 超时才报错，中间毫无反馈，
+ * 玩家会连点好几次。现在按钮直接 disabled，并用这条横幅说明原因
+ * —— 只禁用不解释，玩家只会以为游戏坏了。
+ */
+.lobby-offline-banner {
+  display: flex; align-items: center; justify-content: center;
+  gap: calc(8 * var(--u));
+  margin-bottom: calc(10 * var(--u));
+  padding: calc(7 * var(--u)) calc(16 * var(--u));
+  border: 1px solid rgba(248, 113, 113, 0.6);
+  border-radius: calc(20 * var(--u));
+  background: rgba(69, 10, 10, 0.82);
+  color: #FEE2E2;
+  font-size: max(calc(13 * var(--ut)), 11px);
+  font-weight: 700;
+}
+.lobby-offline-dot {
+  width: calc(8 * var(--u)); height: calc(8 * var(--u));
+  min-width: 6px; min-height: 6px;
+  border-radius: 50%;
+  background: #F87171;
+  animation: lobby-offline-blink 1.2s ease-in-out infinite;
+}
+@keyframes lobby-offline-blink {
+  50% { opacity: 0.25; }
+}
+
+/* 禁用态必须看得出来，否则「点不动」和「坏了」无法区分 */
+.lobby-quick-btn:disabled,
+.lobby-join-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lobby-offline-dot { animation: none; }
+}
+.lobby-join-btn {
+  min-width: calc(136 * var(--u));
+  height: calc(60 * var(--u));
+  padding: 0 calc(20 * var(--u));
+  border: calc(2 * var(--u)) solid rgba(251, 191, 36, 0.72);
+  border-radius: calc(34 * var(--u));
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 40%),
+    linear-gradient(135deg, #1E3A8A 0%, #1E40AF 50%, #1D4ED8 100%);
+  color: #FEF3C7;
+  font-size: calc(18 * var(--ut));
+  font-weight: 800;
+  letter-spacing: calc(3 * var(--u));
+  cursor: pointer;
+  transition: all 0.2s var(--ease-spring);
+  box-shadow:
+    0 calc(4 * var(--u)) calc(12 * var(--u)) rgba(30, 58, 138, 0.4),
+    0 calc(1 * var(--u)) 0 rgba(255,255,255,0.2) inset;
+  white-space: nowrap;
+  font-family: inherit;
+  position: relative;
+  overflow: hidden;
+}
+.lobby-join-btn::after {
+  content: '';
+  position: absolute;
+  top: calc(2 * var(--u));
+  left: 15%; right: 15%;
+  height: calc(4 * var(--u));
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255,255,255,0.3) 50%,
+    transparent 100%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.lobby-join-btn:hover {
+  transform: translateY(calc(-1 * var(--u)));
+  box-shadow:
+    0 calc(6 * var(--u)) calc(16 * var(--u)) rgba(30, 58, 138, 0.5),
+    0 calc(1 * var(--u)) 0 rgba(255,255,255,0.25) inset;
+}
+.lobby-join-btn:active { transform: scale(0.97); }
+/* 「房间列表」与「加入房间」并排：同一形状但配色区分（列表是浏览，加入是直接进）。
+   两个按钮加起来不能把「快速开始」挤出屏幕，所以这里比加入房间略窄。 */
+.lobby-join-btn--rooms {
+  min-width: calc(124 * var(--u));
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.16) 0%, transparent 40%),
+    linear-gradient(135deg, #134E4A 0%, #115E59 50%, #0F766E 100%);
+  border-color: rgba(94, 234, 212, 0.6);
+  box-shadow:
+    0 calc(4 * var(--u)) calc(12 * var(--u)) rgba(15, 118, 110, 0.4),
+    0 calc(1 * var(--u)) 0 rgba(255,255,255,0.18) inset;
+}
+.lobby-join-btn--rooms:hover {
+  box-shadow:
+    0 calc(6 * var(--u)) calc(16 * var(--u)) rgba(15, 118, 110, 0.5),
+    0 calc(1 * var(--u)) 0 rgba(255,255,255,0.22) inset;
+}
+@media (max-width: 900px) {
+  .lobby-quick-btn { min-width: calc(240 * var(--u)); height: calc(64 * var(--u)); font-size: calc(26 * var(--u)); }
+  .lobby-quick-btn .quick-btn-prefix { font-size: max(calc(14 * var(--ut)), 11px); }
+  .lobby-join-btn { min-width: calc(96 * var(--u)); height: calc(52 * var(--u)); font-size: calc(14 * var(--ut)); padding: 0 calc(12 * var(--u)); letter-spacing: calc(1 * var(--u)); }
+  .lobby-join-btn--rooms { min-width: calc(96 * var(--u)); }
+  .lobby-bottom-actions { gap: calc(8 * var(--u)); }
+  .lobby-friend-actions { gap: calc(5 * var(--u)); }
+}
+
+/* ===== 活动中心弹窗 ===== */
+/* 弹窗本体加宽 + 可滚动：签到 7 格 + 三个板块，在手机横屏上必须能滚 */
+.lobby-modal--wide {
+  max-width: calc(680 * var(--u));
+  max-height: 88vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.lobby-act-block {
+  margin-top: calc(12 * var(--u));
+  padding: calc(12 * var(--u)) calc(14 * var(--u)) calc(14 * var(--u));
+  border-radius: calc(14 * var(--u));
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+}
+.lobby-act-block--info {
+  background: rgba(56, 189, 248, 0.08);
+  border-color: rgba(56, 189, 248, 0.28);
+}
+.lobby-act-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(12 * var(--u));
+}
+.lobby-act-row .lobby-act-block--half { margin-top: calc(12 * var(--u)); }
+
+.lobby-act-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(8 * var(--u));
+  margin-bottom: calc(8 * var(--u));
+}
+.lobby-act-name {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(6 * var(--u));
+  font-size: max(calc(14 * var(--ut)), 13px);
+  font-weight: 800;
+  color: #F8FAFC;
+}
+.lobby-act-meta {
+  font-size: max(calc(11.5 * var(--ut)), 11px);
+  color: #FBBF24;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.lobby-act-desc {
+  font-size: max(calc(12 * var(--ut)), 11.5px);
+  color: #94A3B8;
+  line-height: 1.5;
+  min-height: calc(34 * var(--u));
+}
+
+/* 7 天签到格 */
+.lobby-act-signin {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: calc(6 * var(--u));
+}
+.lobby-act-day {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(3 * var(--u));
+  padding: calc(7 * var(--u)) calc(2 * var(--u));
+  border-radius: calc(9 * var(--u));
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  min-width: 0;
+}
+.lobby-act-day-label {
+  font-size: max(calc(10.5 * var(--ut)), 10px);
+  color: #94A3B8;
+  white-space: nowrap;
+}
+.lobby-act-day-coin {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(2 * var(--u));
+  font-size: max(calc(11.5 * var(--ut)), 11px);
+  font-weight: 800;
+  color: #FBBF24;
+  white-space: nowrap;
+}
+.lobby-act-day.is-done {
+  background: rgba(16, 185, 129, 0.16);
+  border-color: rgba(16, 185, 129, 0.5);
+}
+.lobby-act-day.is-done .lobby-act-day-coin { color: #6EE7B7; }
+.lobby-act-day.is-today {
+  background: rgba(251, 191, 36, 0.18);
+  border-color: #FBBF24;
+  box-shadow: 0 0 0 calc(2 * var(--u)) rgba(251, 191, 36, 0.16);
+}
+.lobby-act-day-tick {
+  position: absolute;
+  top: calc(-5 * var(--u));
+  right: calc(-3 * var(--u));
+  width: calc(14 * var(--u));
+  height: calc(14 * var(--u));
+  min-width: 13px;
+  min-height: 13px;
+  border-radius: 50%;
+  background: #10B981;
+  color: #fff;
+  font-size: max(calc(9 * var(--ut)), 9px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+}
+
+/* 板块内的按钮：整宽 + 文字不溢出（此前活动卡按钮定高会截断长文案） */
+.lobby-act-btn {
+  width: 100%;
+  margin-top: calc(10 * var(--u));
+  height: auto;
+  min-height: max(calc(38 * var(--u)), 36px);
+  padding: calc(8 * var(--u)) calc(10 * var(--u));
+  font-size: max(calc(13 * var(--ut)), 12.5px);
+  line-height: 1.25;
+  white-space: normal;
+}
+.lobby-act-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.lobby-act-rules {
+  margin: 0;
+  padding-left: calc(16 * var(--u));
+  display: flex;
+  flex-direction: column;
+  gap: calc(4 * var(--u));
+}
+.lobby-act-rules li {
+  font-size: max(calc(12 * var(--ut)), 11.5px);
+  color: #CBD5E1;
+  line-height: 1.5;
+}
+.lobby-act-rules b { color: #FBBF24; }
+
+/* ===== 各场次底分一览 =====
+   让人在活动页就看清"哪个场多大注、够不够进"，
+   而不是进去被扣了才知道底分多少。 */
+.lobby-act-tiers {
+  margin-top: calc(8 * var(--u));
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: calc(6 * var(--u));
+}
+.lobby-act-tier {
+  display: flex;
+  flex-direction: column;
+  gap: calc(2 * var(--u));
+  padding: calc(6 * var(--u)) calc(4 * var(--u));
+  border-radius: calc(8 * var(--u));
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  text-align: center;
+  min-width: 0;
+}
+.lobby-act-tier-name {
+  font-size: max(calc(12 * var(--ut)), 11.5px);
+  font-weight: 800;
+  color: #FBBF24;
+  white-space: nowrap;
+}
+.lobby-act-tier-num {
+  font-size: max(calc(10 * var(--ut)), 10px);
+  color: #94A3B8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 900px) {
+  .lobby-act-row { grid-template-columns: 1fr; }
+  .lobby-act-signin { grid-template-columns: repeat(4, 1fr); }
+  /* 窄屏 4 列会把「入场 100,000」挤断行，改 2 列 */
+  .lobby-act-tiers { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ===== 顶栏「更多」面板 ===== */
+.lobby-more-list {
+  display: flex;
+  flex-direction: column;
+  gap: calc(8 * var(--u));
+}
+.lobby-more-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: calc(44 * var(--u));
+  padding: 0 calc(14 * var(--u));
+  border-radius: calc(10 * var(--u));
+  border: 1px solid rgba(46, 61, 107, 0.35);
+  background: rgba(255, 255, 255, 0.72);
+  color: #1F2A44;
+  font-size: calc(15 * var(--u));
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.lobby-more-item:active { transform: scale(0.985); background: rgba(232, 211, 168, 0.34); }
+.lobby-more-arrow { color: #8894AE; font-size: calc(18 * var(--u)); }
+
+/* ============================================================
+   弹窗 · 手机横屏适配
+   ------------------------------------------------------------
+   lobby-base.css 里原本写过一套横屏规则，但 Lobby.tsx 直接 import 的是
+   本文件（后加载），.lobby-modal 被整块重定义，那套规则实际从未生效 ——
+   实测 844x390 横屏下建房弹窗是 252x385，高度占满 98.7%（上下只剩 2px），
+   而宽度只用掉 30%，典型的竖屏单列硬塞进横屏。
+   这里按「横屏优先」重写：标题与按钮横跨整宽，表单体两列并排。
+   条件同时收 max-height 与 orientation：平板横屏（高 > 560）空间够用，
+   不需要压缩，保持单列更好看。
+   ============================================================ */
+@media (orientation: landscape) and (max-height: 560px) {
+  .lobby-modal-mask {
+    padding: calc(10 * var(--u)) calc(16 * var(--u));
+    align-items: center;
+  }
+
+  .lobby-modal {
+    /* 横屏宽度：--u 被 clamp 压小后纯 u 值不够，实测 760u 只占 57% 屏宽仍显小。
+       改成「u 值 与 vw 取大」——真正决定体量的是 min(94vw, 上限)，
+       在 844 宽上约占 82%，两列排版彻底舒展开。 */
+    max-width: min(max(calc(980 * var(--u)), 82vw), 94vw);
+    width: min(max(calc(980 * var(--u)), 82vw), 94vw);
+    max-height: calc(100dvh - 16 * var(--u));
+    padding: calc(22 * var(--u)) calc(34 * var(--u)) calc(20 * var(--u));
+    border-radius: calc(20 * var(--u));
+  }
+
+  /* 标题压扁，金色下划线缩短 */
+  .lobby-modal-title {
+    font-size: max(calc(21 * var(--ut)), 18px);
+    margin-bottom: calc(16 * var(--u));
+  }
+  .lobby-modal-title::after {
+    width: calc(36 * var(--u));
+    height: calc(3 * var(--u));
+    margin: calc(6 * var(--u)) auto 0;
+  }
+
+  .lobby-modal-close {
+    top: calc(10 * var(--u));
+    right: calc(10 * var(--u));
+    width: max(calc(30 * var(--u)), 30px);
+    height: max(calc(30 * var(--u)), 30px);
+  }
+
+  /* 核心：表单体两列。左列放模式选择（最高），右列放 AI + 房间号。
+     左列略宽（1.15fr）：模式选项是 2 列网格，多给一点宽度文字更从容。
+     中间用 border-left 画一条淡金分隔线，两组信息一眼分得开。 */
+  .lobby-modal--create .lobby-modal-body {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    column-gap: calc(26 * var(--u));
+    row-gap: 0;
+    align-items: start;
+  }
+  .lobby-modal--create .lobby-modal-body > .lobby-modal-field:nth-child(2),
+  .lobby-modal--create .lobby-modal-body > .lobby-modal-field:nth-child(3) {
+    padding-left: calc(26 * var(--u));
+    border-left: calc(1 * var(--u)) solid rgba(251, 191, 36, 0.18);
+  }
+  /* 第一个字段（房间模式）占左列并竖跨两行，右列自然落 AI 与房间号 */
+  .lobby-modal--create .lobby-modal-body > .lobby-modal-field:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+  .lobby-modal--create .lobby-modal-body > .lobby-modal-field:nth-child(2) { grid-column: 2; grid-row: 1; }
+  .lobby-modal--create .lobby-modal-body > .lobby-modal-field:nth-child(3) { grid-column: 2; grid-row: 2; }
+  /* 第 4 个字段（房间类型）横跨两列落在第 3 行。
+     必须显式指定：不写的话 grid 会把它塞进左列，
+     而左列已被模式选择 span 2 占满，结果排版错位。 */
+  .lobby-modal--create .lobby-modal-body > .lobby-modal-field:nth-child(4) {
+    grid-column: 1 / span 2;
+    grid-row: 3;
+    padding-left: 0;
+    border-left: none;
+    padding-top: calc(10 * var(--u));
+    border-top: calc(1 * var(--u)) solid rgba(251, 191, 36, 0.18);
+  }
+
+  .lobby-modal-field { margin-bottom: calc(14 * var(--u)); }
+  .lobby-modal-label {
+    font-size: max(calc(14 * var(--ut)), 13px);
+    margin-bottom: calc(8 * var(--u));
+  }
+  .lobby-modal-hint {
+    font-size: max(calc(12 * var(--ut)), 11px);
+    margin-top: calc(7 * var(--u));
+  }
+  .lobby-modal-input {
+    height: max(calc(46 * var(--u)), 42px);
+    /* iOS 上 font-size < 16px 的输入框聚焦会自动放大整页，
+       横屏被放大后弹窗就飘出可视区了，这里锁 16px 起 */
+    font-size: max(calc(17 * var(--ut)), 16px);
+    border-radius: calc(11 * var(--u));
+  }
+
+  /* 弹窗放宽到 760u 后左列够宽，3 列排布更紧凑（6 个模式正好两行） */
+  .lobby-mode-selector {
+    grid-template-columns: repeat(3, 1fr);
+    gap: calc(8 * var(--u));
+  }
+  .lobby-mode-option {
+    /* --u 在窄屏被 clamp 压到 0.55px，纯等比算出来只有 17~19px 高，
+       手指点不准。用 max() 兜一个绝对下限（牌桌控件同样是 32~36px 口径）。
+       两行内容（模式名 + 副数）需要 42px 起。 */
+    height: max(calc(50 * var(--u)), 42px);
+    border-radius: calc(10 * var(--u));
+    border-width: calc(2 * var(--u));
+  }
+  .lobby-mode-option-name { font-size: max(calc(13 * var(--ut)), 13px); }
+  .lobby-mode-option-deck { font-size: max(calc(11 * var(--ut)), 10px); }
+
+  /* AI 芯片：最多 6 个（六人模式），横屏一行放不下就换行 */
+  .lobby-ai-selector {
+    flex-wrap: wrap;
+    gap: calc(6 * var(--u));
+  }
+  .lobby-ai-chip {
+    flex: 1 1 0;
+    min-width: max(calc(46 * var(--u)), 40px);
+    height: max(calc(44 * var(--u)), 38px);
+    padding: 0 calc(10 * var(--u));
+    font-size: max(calc(14 * var(--ut)), 13px);
+    border-radius: calc(10 * var(--u));
+    border-width: calc(2 * var(--u));
+  }
+
+  .lobby-modal-err {
+    padding: calc(7 * var(--u)) calc(12 * var(--u));
+    font-size: calc(12 * var(--ut));
+    margin-bottom: calc(8 * var(--u));
+    border-radius: calc(9 * var(--u));
+  }
+
+  /* 底部按钮：横跨整宽居中，主按钮给足宽度，
+     「创建并邀请好友」7 个字绝不能挤成两行 */
+  .lobby-modal-actions {
+    margin-top: calc(12 * var(--u));
+    gap: calc(12 * var(--u));
+    justify-content: center;
+  }
+  .lobby-modal-btn {
+    height: max(calc(52 * var(--u)), 44px);
+    font-size: max(calc(16 * var(--ut)), 15px);
+    border-radius: calc(13 * var(--u));
+    white-space: nowrap;
+  }
+  /* 取消按钮不需要和主按钮等宽，让主按钮更醒目 */
+  .lobby-modal-actions .lobby-modal-btn--ghost { flex: 0 0 max(calc(150 * var(--u)), 108px); }
+  .lobby-modal-actions .lobby-modal-btn--primary { flex: 1 1 auto; max-width: calc(400 * var(--u)); }
+}
+
+/* 极矮横屏（iPhone SE / 小屏安卓横屏，高 <= 360）：再压一档。
+   阈值取 360 而不是 400 —— iPhone 13 横屏是 390 高，两列布局后弹窗
+   只用掉 176px（45%），空间富余，不该跟着一起牺牲提示文案。 */
+@media (orientation: landscape) and (max-height: 360px) {
+  .lobby-modal {
+    padding: calc(12 * var(--u)) calc(18 * var(--u)) calc(10 * var(--u));
+  }
+  .lobby-modal-title {
+    font-size: calc(15 * var(--ut));
+    margin-bottom: calc(8 * var(--u));
+  }
+  .lobby-modal-title::after { margin: calc(4 * var(--u)) auto 0; }
+  .lobby-modal-field { margin-bottom: calc(7 * var(--u)); }
+  .lobby-modal-input { height: max(calc(34 * var(--u)), 34px); font-size: max(calc(14 * var(--ut)), 16px); }
+  .lobby-mode-option, .lobby-ai-chip { height: max(calc(30 * var(--u)), 30px); }
+  .lobby-modal-btn { height: max(calc(38 * var(--u)), 36px); font-size: max(calc(13 * var(--ut)), 13px); }
+  .lobby-modal-actions { margin-top: calc(9 * var(--u)); }
+  /* 提示文案在极矮屏是第一个可牺牲的信息 */
+  .lobby-modal-hint { display: none; }
+}
+
+/* 触控下限（全方向兜底）。
+   --u 在窄屏被 clamp 压到 0.55px，纯等比算出来弹窗控件只有 17~24px 高，
+   手指点不准 —— 竖屏窄机同样中招（实测 390x844 下有 7 个控件 < 28px）。
+   横屏那两档 media 里已各自兜过，这里补齐竖屏/其余情况。
+   只对触屏生效：桌面鼠标精度够，保持等比外观。 */
+@media (pointer: coarse) {
+  .lobby-modal-btn { min-height: 38px; }
+  .lobby-mode-option,
+  .lobby-ai-chip { min-height: 32px; }
+  .lobby-ai-chip { min-width: 34px; }
+  .lobby-modal-close { min-width: 30px; min-height: 30px; }
+  /* iOS 上 <16px 的输入框聚焦会自动放大整页，放大后弹窗会飘出可视区 */
+  .lobby-modal-input { min-height: 36px; font-size: max(calc(18 * var(--ut)), 16px); }
+}
+
+/* ============================================================
+   竖屏手机适配（iPhone 竖屏进大厅）
+   ------------------------------------------------------------
+   为什么必须单独一整块：这套大厅是「横屏优先」设计的三栏 flex row
+   （左侧入口 | 中央 Logo | 右侧 2x2 模式卡），底栏是「圆钮排 + 快速开始」
+   一行 space-between。竖屏 390px 宽下三栏根本挤不进去，实测（iPhone 13 竖屏）：
+     · .lobby-center-group 被压成 16px 宽，Logo 完全看不见
+     · .lobby-classic-card 被压成 18px 宽 × 448px 高（一条竖线）
+     · .lobby-quick-btn（min-width 240u）撑不下，整个跑到 x=549~779，
+       屏幕外 —— 用户反馈的「快速开始按钮有溢出」就是这个
+     · .lobby-hud-actions 溢出到 x=385~456
+     · .lobby-circle-nav 右沿 395 > 390，「分享」被切
+   改法：竖屏下把三栏改成竖排、底栏两行，并给所有横向排列的容器解除
+   nowrap 与固定 min-width。这里不动横屏的任何规则。
+   ============================================================ */
+@media (orientation: portrait) and (max-width: 900px) {
+  /* ---- 顶栏：资源区可收缩，功能按钮不再被挤出屏幕 ---- */
+  .lobby-hud {
+    padding: calc(10 * var(--u)) calc(12 * var(--u));
+    gap: calc(8 * var(--u));
+  }
+  /* flex:1 + justify-content:center 在窄屏会让资源区占满并把右侧按钮顶出去。
+     min-width:0 允许它收缩，flex-wrap 让三个资源块放不下时换行而不是溢出。 */
+  .lobby-hud-resources {
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: calc(6 * var(--u));
+  }
+  .lobby-resource {
+    padding: calc(4 * var(--u)) calc(10 * var(--u)) calc(4 * var(--u)) calc(4 * var(--u));
+    font-size: calc(13 * var(--ut));
+  }
+  .lobby-hud-actions { flex-shrink: 0; gap: calc(6 * var(--u)); }
+  /* 头像那块在竖屏最不重要（点进「我的」还有别的入口），优先让它让位 */
+  .lobby-hud-user { min-width: 0; flex-shrink: 1; overflow: hidden; }
+  .lobby-hud-nick, .lobby-hud-level { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ---- 主区：三栏 row 改竖排 ---- */
+  .lobby-content {
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    padding: 0 calc(14 * var(--u));
+    gap: calc(10 * var(--u));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 左侧入口原来是 position:absolute 竖排贴左，竖屏改成正常流里的横排一行 */
+  .lobby-side-entries {
+    position: static;
+    left: auto; top: auto; bottom: auto;
+    width: 100%;
+    flex-direction: row;
+    justify-content: center;
+    gap: calc(28 * var(--u));
+    padding-top: calc(4 * var(--u));
+    flex-shrink: 0;
+  }
+  .lobby-side-entry { width: auto; }
+
+  /* Logo：竖屏给一条固定高度的带，不再参与三栏抢宽 */
+  .lobby-center-group {
+    flex: 0 0 auto;
+    max-width: 100%;
+    padding-right: 0;
+    justify-content: center;
+  }
+  .lobby-hero {
+    height: auto;
+    max-height: calc(150 * var(--u));
+    justify-content: center;
+    width: 100%;
+  }
+  .lobby-hero-logo { height: auto; max-height: calc(150 * var(--u)); max-width: 88%; }
+
+  /* 模式卡：3 列（经典跨两行）改 2 列，经典卡回到第一行整行 —— 
+     竖屏下 3 列每列只有 ~115px，卡里的「4人 · 三副牌经典」必然断行。 */
+  .lobby-mode-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto auto auto;
+    gap: calc(10 * var(--u));
+    padding: calc(4 * var(--u)) 0 calc(8 * var(--u));
+    align-self: auto;
+  }
+  .lobby-classic-card--grid {
+    /* 跨两行改成跨两列：竖屏里它是「主推入口」，横着一条更醒目也放得下文字 */
+    grid-row: auto;
+    grid-column: 1 / -1;
+    aspect-ratio: 16 / 7;
+  }
+  .lobby-classic-card-img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* ---- 底栏：一行 space-between 改两行 ---- */
+  .lobby-bottom {
+    flex-direction: column;
+    align-items: stretch;
+    gap: calc(10 * var(--u));
+    padding: calc(8 * var(--u)) calc(14 * var(--u)) calc(14 * var(--u));
+  }
+  /* 6 个圆钮在 390px 里放不下一行（实测右沿 395px，「分享」被切一半）。
+     允许换行 + gap 收紧，六个刚好两行三列。 */
+  .lobby-circle-nav {
+    flex-wrap: wrap;
+    justify-content: space-around;
+    gap: calc(10 * var(--u)) calc(6 * var(--u));
+    width: 100%;
+  }
+  /* 圆钮文字给出足够宽度，否则「排行榜」三个字会断行（用户反馈的现象）。
+     用 flex-basis 让每个钮至少占到 1/4 宽，文字 nowrap 就不会折。 */
+  .lobby-circle-btn { flex: 0 0 auto; min-width: calc(56 * var(--u)); }
+  .lobby-circle-label {
+    white-space: nowrap;
+    font-size: max(calc(12 * var(--ut)), 10px);
+    padding: calc(1 * var(--u)) calc(4 * var(--u));
+    letter-spacing: 0;
+  }
+
+  /* 三个按钮（房间列表 / 加入房间 / 快速开始）竖屏排一行会溢出。
+     房间列表+加入房间并排占一行，快速开始独占一行整宽 —— 它是主行动按钮，
+     整宽反而比挤在角落更好按。 */
+  .lobby-bottom-actions {
+    flex-wrap: wrap;
+    gap: calc(8 * var(--u));
+    width: 100%;
+  }
+  .lobby-join-btn {
+    flex: 1 1 0;
+    min-width: 0;              /* 关键：解除 136u 下限，否则两个按钮相加就溢出 */
+    height: calc(48 * var(--u));
+    padding: 0 calc(10 * var(--u));
+    font-size: max(calc(13 * var(--ut)), 11px);
+    white-space: nowrap;
+  }
+  .lobby-join-btn--rooms { min-width: 0; }
+  .lobby-quick-btn {
+    /* min-width 240u 是竖屏溢出的直接原因，这里必须清掉并改成整宽 */
+    min-width: 0;
+    width: 100%;
+    flex: 1 1 100%;
+    height: calc(56 * var(--u));
+    padding: 0 calc(18 * var(--u));
+    /* 横屏是「模式前缀靠右 + 快速开始」右对齐，竖屏整宽后居中更自然 */
+    justify-content: center;
+    gap: calc(10 * var(--u));
+  }
+  .lobby-quick-btn .quick-btn-prefix {
+    font-size: max(calc(12 * var(--ut)), 10px);
+    /* 横屏用 margin-right:auto 把「四人模式 3副」推到最左、「快速开始」贴右，
+       那是按钮只有 203px 时的排法。竖屏整宽 372px 后这个 auto 会把两段
+       拉开到 270px 间距，看起来像两个不相干的东西（实测 padL:270 padR:13）。
+       竖屏改成并拢居中。 */
+    margin-right: 0;
+    padding-left: 0;
+  }
+  .lobby-quick-btn .quick-btn-main { font-size: max(calc(17 * var(--ut)), 15px); }
+}
+
+/* ============================================================
+   横屏矮屏手机（iPhone 横屏，高 <=500）：大厅主界面窄屏适配
+   ------------------------------------------------------------
+   背景：这套大厅按横屏桌面（1024+ 宽）设计，横屏弹窗做过适配，
+   但「主界面」从来没做过 —— 底栏是 6 个圆钮 + 房间列表/加入房间/
+   快速开始，一行 space-between 硬排。真机横屏实测（注入 47px 刘海
+   安全区等价模拟）：底栏内容需 669px，安全区里可用只有 ~608px，
+   结果快速开始被顶到刘海区被裁掉一半，圆钮标签「排行榜」被挤换行。
+   注意 body 在同档媒体查询里已经有 env(safe-area-inset) padding
+   （orientationLock.css，全局常驻），这里只负责把内容缩到放得下，
+   不要再加 env 内边距，否则双重内收。
+   兜底：底栏允许换行 —— 再窄的屏（iPhone SE 横屏安全宽 579px），
+   按钮组自动掉到第二行整宽，也不许溢出安全区。
+   ============================================================ */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* 顶栏：外沿贴近安全区边界即可，不再留 64u 的大边 */
+  /* 各内容层自己叠加刘海安全区（背景仍然铺满整屏，所以不会有黑边）。
+     body 上不能加左右 padding —— 那会把铺底的大厅整体内收，
+     两侧露出 body 底色，就是用户看到的「左右黑边、全屏不了」。 */
+  .lobby-hud {
+    padding-left: calc(14 * var(--u) + var(--safe-l, 0px));
+    padding-right: calc(14 * var(--u) + var(--safe-r, 0px));
+  }
+
+  /* 主区：三栏保留横排（横屏高度宝贵，不能像竖屏那样堆竖排），
+     但 64u 两侧内边距太大，压掉 80px 横向空间 */
+  .lobby-content {
+    padding-left: calc(14 * var(--u) + var(--safe-l, 0px));
+    padding-right: calc(14 * var(--u) + var(--safe-r, 0px));
+  }
+  .lobby-side-entries {
+    left: calc(14 * var(--u) + var(--safe-l, 0px));
+  }
+
+  /* ---- 底栏：允许换行做兜底 ---- */
+  .lobby-bottom {
+    flex-wrap: wrap;
+    row-gap: calc(6 * var(--u));
+    padding: calc(8 * var(--u)) calc(14 * var(--u) + var(--safe-r, 0px))
+             calc(10 * var(--u)) calc(14 * var(--u) + var(--safe-l, 0px));
+  }
+  /* 圆钮排：收紧 gap、图标缩一档；允许自身被压缩到最小内容宽度 */
+  .lobby-circle-nav {
+    flex: 0 1 auto;
+    min-width: 0;
+    gap: calc(14 * var(--u));
+  }
+  .lobby-circle-btn { gap: calc(4 * var(--u)); min-width: 0; }
+  .lobby-circle-icon {
+    width: calc(52 * var(--u));
+    height: calc(52 * var(--u));
+    min-width: 34px;
+    min-height: 34px;
+  }
+  /* 圆钮文字任何情况下都不许换行 —— 「排行榜」三个字挤成两行
+     就是因为少了 nowrap，宽度不足时该压缩的是图标和间距，不是文字 */
+  .lobby-circle-label {
+    white-space: nowrap;
+    font-size: max(calc(12 * var(--ut)), 10px);
+    padding: calc(1 * var(--u)) calc(4 * var(--u));
+    letter-spacing: 0;
+  }
+
+  /* 按钮组：能压缩、不设固定下限；一行放不下时掉到第二行整宽 */
+  .lobby-bottom-actions {
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: calc(8 * var(--u));
+    justify-content: flex-end;
+  }
+  .lobby-join-btn,
+  .lobby-join-btn--rooms {
+    min-width: 0;
+    flex: 0 1 auto;
+    height: calc(44 * var(--u));
+    min-height: 34px;
+    padding: 0 calc(12 * var(--u));
+    font-size: max(calc(12 * var(--ut)), 11px);
+    white-space: nowrap;
+  }
+  /* 快速开始：240u 的 min-width 是溢出主因，这里解锁并改成
+     按内容自适应；它是最右一个，只要能压缩就不会顶进刘海区 */
+  .lobby-quick-btn {
+    min-width: 0;
+    flex: 0 1 auto;
+    height: calc(48 * var(--u));
+    min-height: 38px;
+    padding: 0 calc(24 * var(--u));
+    font-size: calc(22 * var(--u));
+    letter-spacing: calc(6 * var(--u));
+    gap: calc(10 * var(--u));
+  }
+  .lobby-quick-btn .quick-btn-prefix {
+    font-size: max(calc(12 * var(--ut)), 10px);
+  }
+  .lobby-quick-btn .quick-btn-main {
+    font-size: max(calc(16 * var(--ut)), 13px);
+  }
+}
+
+/* 圆钮文字全局兜底：任何屏都不该换行（竖屏块里写过 nowrap，
+   这里补到基础规则，横屏非矮屏（平板/桌面）也一并锁死） */
+.lobby-circle-label {
+  white-space: nowrap;
+}
+
+/* 主入口明确后，运营入口保持可见但不再与「快速开始」争夺第一眼注意力。 */
+.lobby-circle-nav { opacity: 0.9; }
+
+@media (orientation: portrait) {
+  .lobby-friend-actions {
+    flex: 1 1 100%;
+    width: 100%;
+    padding-top: calc(14 * var(--u));
+  }
+  .lobby-friend-actions .lobby-join-btn {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .lobby-friend-actions {
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: calc(10 * var(--u)) calc(3 * var(--u)) calc(2 * var(--u));
+    gap: calc(4 * var(--u));
+  }
+  .lobby-friend-actions .lobby-join-btn {
+    min-width: 0;
+    padding-inline: calc(10 * var(--u));
+  }
+}

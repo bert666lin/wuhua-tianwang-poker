@@ -1,0 +1,30 @@
+{
+  "name": "wuhua-tianwang-poker-server",
+  "version": "1.0.0",
+  "description": "五华天王扑克H5游戏服务器",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "build": "tsc",
+    "test": "tsx --test src/**/*.test.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@colyseus/core": "^0.17.50",
+    "@colyseus/monitor": "^0.17.8",
+    "@colyseus/schema": "4.0.31",
+    "@colyseus/tools": "^0.17.20",
+    "@colyseus/ws-transport": "^0.17.13",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.2.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  }
+}

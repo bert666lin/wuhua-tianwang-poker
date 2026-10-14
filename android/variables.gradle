@@ -1,0 +1,22 @@
+ext {
+    // ⚠️ 这些版本由 Capacitor 8 的官方模板决定（node_modules/@capacitor/cli/
+    // assets/android-template.tar.gz 里的 variables.gradle）。
+    // Capacitor 8 要求 compileSdk/targetSdk 36、minSdk 24：
+    // minSdk 从 23 提到 24 意味着放弃 Android 6.0（API 23）机型。
+    // 这不是我们选的，是 Capacitor 8 内核的硬要求（capacitor/build.gradle 里
+    // 写死了 minSdkVersion 默认 24），压回 23 会在编译期报 manifest 冲突。
+    minSdkVersion = 24
+    compileSdkVersion = 36
+    targetSdkVersion = 36
+    androidxActivityVersion = '1.11.0'
+    androidxAppCompatVersion = '1.7.1'
+    androidxCoordinatorLayoutVersion = '1.3.0'
+    androidxCoreVersion = '1.17.0'
+    androidxFragmentVersion = '1.8.9'
+    coreSplashScreenVersion = '1.2.0'
+    androidxWebkitVersion = '1.14.0'
+    junitVersion = '4.13.2'
+    androidxJunitVersion = '1.3.0'
+    androidxEspressoCoreVersion = '3.7.0'
+    cordovaAndroidVersion = '14.0.1'
+}

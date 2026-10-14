@@ -1,0 +1,48 @@
+/* 通用分享按钮组：微信 / QQ / 复制链接 */
+.invite-share {
+  display: flex;
+  gap: calc(8 * var(--u, 1px));
+  align-items: stretch;
+}
+
+.invite-share-btn {
+  flex: 1;
+  min-height: calc(38 * var(--u, 1px));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(6 * var(--u, 1px));
+  padding: 0 calc(10 * var(--u, 1px));
+  border-radius: calc(10 * var(--u, 1px));
+  font-size: calc(14 * var(--u, 1px));
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: transform 0.12s ease, filter 0.12s ease;
+  white-space: nowrap;
+}
+.invite-share-btn:active { transform: scale(0.96); }
+
+.invite-share-btn--weixin {
+  background: linear-gradient(180deg, #4FCB6B, #2FA24E);
+  color: #08240F;
+}
+.invite-share-btn--copy {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(232, 211, 168, 0.42);
+  color: #E8D3A8;
+}
+
+.invite-share-btn:disabled { opacity: 0.6; pointer-events: none; }
+
+.invite-share-icon { font-size: calc(15 * var(--u, 1px)); line-height: 1; }
+
+/* 桌面上只有「复制链接」，说明一句原因，免得用户以为分享坏了 */
+.invite-share-tip {
+  flex: 1 1 100%;
+  margin: calc(2 * var(--u, 1px)) 0 0;
+  font-size: calc(11 * var(--ut, 1px));
+  line-height: 1.4;
+  color: rgba(232, 211, 168, 0.62);
+  text-align: center;
+}

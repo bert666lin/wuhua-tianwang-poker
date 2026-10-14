@@ -1,0 +1,407 @@
+/* ===== Rooms v3 蓝+金 =====
+ * 房间列表：HUD + 搜索 + 模式/状态筛选 + 房间卡
+ * 桌面 16:9 / 手机横屏 / 手机竖屏 全适配
+ */
+
+@import './tokens.css';
+
+.rooms-root {
+  position: relative;
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  background: var(--grad-page);
+  color: var(--c-text);
+  overflow: hidden;
+}
+.rooms-root::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('/assets/ui/bg-main.webp') center / cover no-repeat;
+  filter: blur(calc(6 * var(--u))) saturate(0.9);
+  opacity: 0.5;
+  transform: scale(1.05);
+  pointer-events: none;
+  /* z-index:-1 必须显式写：position:absolute 且 z-index:auto 的伪元素在
+     CSS 绘制顺序里排在「普通流文字」之后，会以 opacity:.5 盖在正文上，
+     把整页文字/按钮的对比度直接对半砍。宿主已是 position:relative，
+     所以 -1 只退到宿主背景之上，不会漏到 body 后面。 */
+  z-index: -1;
+}
+
+.rooms-hud {
+  flex: 0 0 auto;
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: calc(12 * var(--u)) calc(20 * var(--u));
+  padding-top: calc(12 * var(--u) + env(safe-area-inset-top));
+  min-height: calc(48 * var(--u));
+  background: var(--grad-hud);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 2;
+}
+.rooms-back {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: max(calc(40 * var(--u)), 38px); height: max(calc(40 * var(--u)), 38px);
+  background: linear-gradient(180deg, rgba(58,44,110,0.95), rgba(32,24,66,0.92));
+  border: calc(1 * var(--u)) solid rgba(251,191,36,0.42);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.15s var(--ease-spring);
+  flex: 0 0 auto;
+  color: #FCD34D;
+  box-shadow:
+    0 calc(3 * var(--u)) calc(10 * var(--u)) rgba(0,0,0,0.35),
+    inset 0 calc(1 * var(--u)) 0 rgba(255,255,255,0.14);
+}
+.rooms-back:hover { transform: scale(1.06); }
+.rooms-title {
+  margin: 0;
+  font-size: calc(20 * var(--ut));
+  font-weight: 800;
+  color: var(--c-blue-900);
+  letter-spacing: calc(2 * var(--u));
+  flex: 1;
+  text-align: center;
+}
+.rooms-refresh {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: calc(32 * var(--u)); height: calc(32 * var(--u));
+  background: var(--c-bg-glass);
+  border: 1px solid var(--c-border-soft);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  flex: 0 0 auto;
+  /* 横屏 --u≈0.63，纯 u 尺寸会缩到触控下限以下，用绝对 px 兜底 */
+  width: max(calc(36 * var(--u)), 32px); height: max(calc(36 * var(--u)), 32px);
+}
+.rooms-refresh:hover { background: rgba(110, 131, 181, 0.18); }
+.is-spin { animation: rooms-spin 0.8s linear infinite; }
+@keyframes rooms-spin { to { transform: rotate(360deg); } }
+
+/* === 工具栏 === */
+.rooms-toolbar {
+  flex: 0 0 auto;
+  display: flex; gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4) var(--sp-2);
+}
+.rooms-search {
+  flex: 1;
+  display: flex; align-items: center; gap: calc(8 * var(--u));
+  padding: calc(8 * var(--u)) calc(12 * var(--u));
+  background: rgba(15, 26, 46, 0.5);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--r-pill);
+  transition: border-color var(--t-fast);
+}
+.rooms-search:focus-within { border-color: var(--c-gold-400); }
+.rooms-search input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--c-text);
+  /* iOS 上 <16px 的 input 聚焦会自动放大整页，必须给 16px 下限 */
+  font-size: max(calc(13 * var(--ut)), 16px);
+  font-weight: 600;
+  font-family: inherit;
+  min-width: 0;
+  min-height: 32px;
+}
+.rooms-search input::placeholder { color: var(--c-text-dim); }
+
+.rooms-create-btn {
+  display: inline-flex; align-items: center; gap: calc(4 * var(--u));
+  padding: calc(8 * var(--u)) calc(14 * var(--u));
+  background: var(--grad-button);
+  color: var(--c-text-on-gold);
+  border: 1px solid var(--c-gold-700);
+  border-radius: var(--r-pill);
+  font-size: calc(13 * var(--ut));
+  font-weight: 900;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.05em;
+  box-shadow: var(--sh-1);
+  transition: all var(--t-fast);
+  flex: 0 0 auto;
+  /* 横屏 --u≈0.63，纯 u 尺寸会缩到触控下限以下，用绝对 px 兜底 */
+  min-height: 32px;
+}
+.rooms-create-btn:hover { transform: translateY(-1px); box-shadow: var(--sh-2); }
+
+/* === 筛选行 === */
+.rooms-filter-row {
+  flex: 0 0 auto;
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: calc(4 * var(--u)) var(--sp-4) 0;
+}
+.rooms-filter-label {
+  display: inline-flex; align-items: center; gap: calc(4 * var(--u));
+  font-size: 11px;
+  color: var(--c-text-dim);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  flex: 0 0 auto;
+  width: calc(44 * var(--u));
+  text-transform: uppercase;
+}
+.rooms-filter-list {
+  display: flex; gap: calc(6 * var(--u));
+  flex: 1;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: calc(4 * var(--u)) 0;
+}
+.rooms-filter-list::-webkit-scrollbar { display: none; }
+
+.rooms-chip {
+  padding: calc(5 * var(--u)) calc(12 * var(--u));
+  background: var(--c-bg-glass);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--r-pill);
+  color: var(--c-text-mute);
+  font-size: calc(12 * var(--ut));
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--t-fast);
+  font-family: inherit;
+  flex: 0 0 auto;
+  /* 横屏 --u≈0.63，纯 u 尺寸会缩到触控下限以下，用绝对 px 兜底 */
+  min-height: 32px;
+}
+.rooms-chip:hover { color: var(--c-text); border-color: var(--c-border); }
+.rooms-chip.is-active {
+  background: var(--c-blue-500);
+  color: var(--c-text);
+  border-color: var(--c-blue-300);
+  box-shadow: var(--c-glow-blue);
+}
+
+/* === 房间列表 === */
+.rooms-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: var(--sp-3) var(--sp-4) calc(var(--sp-7) + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: var(--sp-2);
+  max-width: calc(1080 * var(--u));
+  margin: 0 auto;
+  width: 100%;
+}
+
+.rooms-empty {
+  display: flex; flex-direction: column; align-items: center; gap: calc(12 * var(--u));
+  padding: var(--sp-9) var(--sp-4);
+  color: var(--c-text-dim);
+}
+.rooms-empty-hint {
+  max-width: calc(360 * var(--u));
+  font-size: calc(12 * var(--ut));
+  line-height: 1.6;
+  color: var(--c-text-mute);
+  text-align: center;
+}
+.rooms-empty-btn {
+  padding: calc(8 * var(--u)) calc(18 * var(--u));
+  background: var(--grad-button);
+  color: var(--c-text-on-gold);
+  border: 1px solid var(--c-gold-700);
+  border-radius: var(--r-pill);
+  font-size: calc(13 * var(--ut));
+  font-weight: 900;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.05em;
+  box-shadow: var(--sh-1);
+  /* 横屏 --u≈0.63，纯 u 尺寸会缩到触控下限以下，用绝对 px 兜底 */
+  min-height: 36px;
+}
+
+.rooms-card {
+  display: grid;
+  grid-template-columns: 1fr 130px auto;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--grad-card-soft);
+  border: 1px solid var(--c-border-soft);
+  border-radius: var(--r-md);
+  transition: all var(--t-fast);
+  position: relative;
+  overflow: hidden;
+}
+.rooms-card:hover {
+  border-color: var(--c-border);
+  transform: translateY(-1px);
+  box-shadow: var(--sh-2);
+}
+.rooms-card.is-playing {
+  opacity: 0.85;
+  filter: saturate(0.7);
+}
+.rooms-card.is-full { opacity: 0.5; pointer-events: none; }
+
+.rooms-card-left {
+  display: flex; flex-direction: column; gap: calc(4 * var(--u));
+  min-width: 0;
+}
+.rooms-card-code {
+  font-size: calc(18 * var(--ut));
+  font-weight: 900;
+  font-family: var(--font-mono);
+  color: var(--c-text-gold);
+  letter-spacing: 0.12em;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.4);
+}
+.rooms-card-mode {
+  display: inline-flex; align-items: center; gap: calc(4 * var(--u));
+  font-size: calc(12 * var(--ut));
+  color: var(--c-text);
+  font-weight: 700;
+}
+.rooms-card-host {
+  display: inline-flex; align-items: center; gap: calc(4 * var(--u));
+  font-size: 11px;
+  color: var(--c-text-mute);
+}
+.rooms-card-rank {
+  display: inline-block;
+  margin-left: 2px;
+  padding: 1px calc(5 * var(--u));
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: var(--r-sm);
+  letter-spacing: 0.05em;
+}
+.rooms-card-rank.gold   { background: var(--grad-gold-soft); color: var(--c-gold-200); border: 1px solid var(--c-gold-500); }
+.rooms-card-rank.silver { background: linear-gradient(180deg, rgba(213,222,236,0.2) 0%, rgba(143,160,200,0.1) 100%); color: #D5DEEC; border: 1px solid var(--c-blue-300); }
+.rooms-card-rank.bronze { background: linear-gradient(180deg, rgba(200,149,109,0.2) 0%, rgba(139,106,63,0.1) 100%); color: #D9BD92; border: 1px solid var(--c-gold-700); }
+
+/* 真人数标签：一眼看出桌上有几个活人（其余是 AI） */
+.rooms-card-humans {
+  display: inline-block;
+  margin-left: 2px;
+  padding: 1px calc(5 * var(--u));
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: var(--r-sm);
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  color: #6EE7B7;
+  white-space: nowrap;
+}
+
+.rooms-card-mid {
+  display: flex; flex-direction: column; align-items: center; gap: calc(4 * var(--u));
+}
+.rooms-card-seats {
+  display: flex; gap: calc(4 * var(--u));
+}
+.rooms-card-seat {
+  width: calc(10 * var(--u)); height: calc(10 * var(--u));
+  border-radius: 50%;
+  background: rgba(15, 26, 46, 0.6);
+  border: 1px solid var(--c-border-soft);
+}
+.rooms-card-seat.is-on {
+  background: var(--grad-button);
+  border-color: var(--c-gold-400);
+  box-shadow: 0 0 6px rgba(232, 211, 168, 0.4);
+}
+.rooms-card-count {
+  font-size: calc(14 * var(--ut));
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--c-text);
+}
+.rooms-card-stake {
+  display: inline-flex; align-items: center; gap: calc(3 * var(--u));
+  font-size: 11px;
+  font-weight: 800;
+}
+.text-gold { color: var(--c-text-gold); }
+
+.rooms-card-right {
+  display: flex; flex-direction: column; align-items: flex-end; gap: calc(6 * var(--u));
+}
+.rooms-card-tag {
+  font-size: 9px;
+  font-weight: 900;
+  padding: 2px calc(6 * var(--u));
+  border-radius: calc(3 * var(--u));
+  background: var(--c-red-500);
+  color: #fff;
+  letter-spacing: 0.08em;
+}
+.rooms-card-tag.is-fast {
+  background: linear-gradient(180deg, #F0DEBB 0%, #C9A467 100%);
+  color: var(--c-text-on-gold);
+}
+/* 房卡局（朋友局）：用绿色区分于金色的「快」。
+   绿 = “不会输钱”的安全感，不能和金币局用同一个颜色。 */
+.rooms-card-tag.is-friend {
+  background: linear-gradient(180deg, #4ADE80 0%, #16A34A 100%);
+  color: #05240F;
+  letter-spacing: 0.02em;
+}
+.rooms-card-status {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px calc(6 * var(--u));
+  border-radius: var(--r-sm);
+  letter-spacing: 0.05em;
+  background: rgba(91, 174, 122, 0.2);
+  color: var(--c-green-400);
+  border: 1px solid rgba(125, 204, 151, 0.3);
+}
+.rooms-card-status.playing {
+  background: rgba(200, 49, 43, 0.2);
+  color: var(--c-red-400);
+  border-color: rgba(229, 90, 78, 0.3);
+}
+.rooms-card-btn {
+  padding: calc(6 * var(--u)) calc(14 * var(--u));
+  background: var(--grad-button);
+  color: var(--c-text-on-gold);
+  border: 1px solid var(--c-gold-700);
+  border-radius: var(--r-pill);
+  font-size: calc(13 * var(--ut));
+  font-weight: 900;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: 0.08em;
+  box-shadow: var(--sh-1);
+  transition: all var(--t-fast);
+}
+.rooms-card-btn:hover { transform: translateY(-1px); box-shadow: var(--sh-2); }
+.rooms-card-btn.is-spectate {
+  background: var(--c-bg-glass);
+  color: var(--c-text);
+  border-color: var(--c-border-soft);
+}
+/* 对战中的房间不可加入：禁用态要明确可见，避免用户以为按钮坏了 */
+.rooms-card-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.rooms-card-btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* === 响应式 === */
+@media (max-width: 768px) {
+  .rooms-card { grid-template-columns: 1fr auto; }
+  .rooms-card-mid { display: none; }
+}
+
+@media (max-width: 480px) {
+  .rooms-card { padding: calc(10 * var(--u)); gap: calc(8 * var(--u)); }
+  .rooms-card-code { font-size: calc(15 * var(--ut)); }
+  .rooms-filter-label { width: calc(40 * var(--u)); font-size: 10px; }
+}

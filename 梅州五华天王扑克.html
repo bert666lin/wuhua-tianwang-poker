@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>梅州五华天王扑克 小程序完整需求文档（OpenClaw开发版）</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+        line-height: 1.8;
+        color: #222;
+        max-width: 1000px;
+        margin: 30px auto;
+        padding: 0 20px;
+        background: #f5f7fa;
+    }
+    .document-box {
+        background: #fff;
+        padding: 40px 50px;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    h1 {
+        color: #c0392b;
+        text-align: center;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #c0392b;
+        margin-bottom: 30px;
+        font-size: 26px;
+    }
+    h2 {
+        color: #2c3e50;
+        margin-top: 35px;
+        margin-bottom: 15px;
+        padding-left: 10px;
+        border-left: 4px solid #c0392b;
+        font-size: 20px;
+    }
+    h3 {
+        color: #34495e;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        font-size: 17px;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 15px 0;
+        font-size: 14px;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 10px 12px;
+        text-align: center;
+    }
+    th {
+        background: #fdf2f2;
+        color: #c0392b;
+        font-weight: 600;
+    }
+    ul, ol {
+        margin: 10px 0 10px 28px;
+    }
+    li { margin: 6px 0; }
+    .highlight {
+        background: #fff8e1;
+        padding: 12px 16px;
+        border-radius: 6px;
+        border-left: 4px solid #f39c12;
+        margin: 15px 0;
+    }
+    .warning {
+        background: #fdecea;
+        padding: 12px 16px;
+        border-radius: 6px;
+        border-left: 4px solid #e74c3c;
+        margin: 15px 0;
+    }
+    .code-block {
+        background: #f4f6f8;
+        padding: 12px 16px;
+        border-radius: 6px;
+        font-family: Consolas, monospace;
+        font-size: 13px;
+        margin: 10px 0;
+        overflow-x: auto;
+    }
+    .footer-note {
+        margin-top: 40px;
+        padding-top: 15px;
+        border-top: 1px dashed #ccc;
+        font-size: 13px;
+        color: #7f8c8d;
+        text-align: center;
+    }
+</style>
+</head>
+<body>
+<div style="max-width:1100px;margin:16px auto;padding:14px 18px;background:#fff3cd;border:1px solid #e5b84b;border-radius:8px;color:#5f4600;font-weight:700;">历史需求文档，仅供追溯；其中固定方块3、甩牌和四副牌等内容已经过期。当前实施基线为 docs/PHASE1-SPEC.md。</div>
+<div class="document-box">
+
+<h1>梅州五华天王扑克 小程序完整需求文档</h1>
+<p style="text-align:center;color:#666;margin-bottom:20px;">文档版本：V1.1 ｜ 适用：微信小程序开发 ｜ 面向OpenClaw工程化开发</p>
+
+<div class="warning">
+    <strong>合规硬性约束（必须严格执行）</strong>
+    <ol>
+        <li>禁止任何现金充值、房卡付费、金币兑换、赌博相关功能，仅做纯娱乐积分，积分仅本局有效，不可提现、不可跨局累计交易。</li>
+        <li>UI文案禁止出现“赌博、下注、赌资、充值赢钱”等违规词汇。</li>
+        <li>小程序类目建议选择：娱乐 → 休闲娱乐。</li>
+    </ol>
+</div>
+
+<h2>一、项目概述</h2>
+<p>五华天王是梅州五华地区经典升级类扑克游戏，核心特色为<strong>方块3 = 天王（全场最大牌）</strong>，采用「1庄家 VS 多闲家同盟」的对抗模式，通过叫主、叫分抢庄、扣底、甩牌、抠底完成对局。</p>
+<p>本项目支持<strong>多人数+多副牌可配置</strong>，核心逻辑统一复用，仅通过配置表切换参数，降低开发成本。</p>
+
+<h3>1.1 支持模式总览</h3>
+<table>
+    <tr>
+        <th>模式名称</th><th>人数</th><th>牌副数</th><th>玩法定位</th><th>MVP优先级</th>
+    </tr>
+    <tr>
+        <td>标准天王场</td><td>4人</td><td>2副</td><td>五华本地官方标准玩法</td><td>P0 必做</td>
+    </tr>
+    <tr>
+        <td>三人三脚天王</td><td>3人</td><td>2副</td><td>梅州民间经典3人场</td><td>P1 推荐</td>
+    </tr>
+    <tr>
+        <td>四人加强场</td><td>4人</td><td>3副</td><td>线下聚会热门变种</td><td>P1 推荐</td>
+    </tr>
+    <tr>
+        <td>五人扩展场</td><td>5人</td><td>3副</td><td>民间多人聚会扩展</td><td>P2 可选</td>
+    </tr>
+    <tr>
+        <td>六人扩展场</td><td>6人</td><td>4副</td><td>民间多人聚会扩展</td><td>P2 可选</td>
+    </tr>
+</table>
+
+<h2>二、全模式配置参数表（代码配置化，禁止硬编码）</h2>
+<p>所有模式共用一套核心逻辑，运行时读取对应配置即可。所有叫分均为<strong>5的整数倍</strong>。</p>
+
+<table>
+    <tr>
+        <th>配置项</th><th>3人三脚天王<br>（2副牌）</th><th>4人标准场<br>（2副牌）</th><th>4人加强场<br>（3副牌）</th><th>5人扩展场<br>（3副牌）</th><th>6人扩展场<br>（4副牌）</th>
+    </tr>
+    <tr>
+        <td>总牌数</td><td>108张</td><td>108张</td><td>162张</td><td>162张</td><td>216张</td>
+    </tr>
+    <tr>
+        <td>全局总分</td><td>100分</td><td>100分</td><td>150分</td><td>150分</td><td>200分</td>
+    </tr>
+    <tr>
+        <td>每人发牌数</td><td>31张</td><td>24张</td><td>36张</td><td>30张</td><td>34张</td>
+    </tr>
+    <tr>
+        <td>底牌数量</td><td>15张</td><td>12张</td><td>18张</td><td>12张</td><td>12张</td>
+    </tr>
+    <tr>
+        <td>庄家扣底数量</td><td>15张</td><td>12张</td><td>18张</td><td>12张</td><td>12张</td>
+    </tr>
+    <tr>
+        <td>叫分上限（起叫分）</td><td>75分</td><td>105分</td><td>155分</td><td>140分</td><td>180分</td>
+    </tr>
+    <tr>
+        <td>叫分下限</td><td>30分</td><td>40分</td><td>60分</td><td>50分</td><td>70分</td>
+    </tr>
+    <tr>
+        <td>叫分步长</td><td>5分</td><td>5分</td><td>5分</td><td>5分</td><td>5分</td>
+    </tr>
+    <tr>
+        <td>对抗关系</td><td>1庄VS2闲</td><td>1庄VS3闲</td><td>1庄VS3闲</td><td>1庄VS4闲</td><td>1庄VS5闲</td>
+    </tr>
+</table>
+
+<div class="highlight">
+    <strong>说明：</strong>
+    <ul>
+        <li>3人三脚天王为梅州本地成熟玩法，参数沿用民间标准；5/6人为民间聚会扩展模式，基于核心规则平衡推导。</li>
+        <li>无人叫主时，统一翻开底牌第6张定主花色；若翻出大小王，则重新翻下一张直到出现花色牌。</li>
+    </ul>
+</div>
+
+<h2>三、全局通用核心规则（所有模式完全一致）</h2>
+
+<h3>3.1 常主与牌力排序</h3>
+<p>常主：永远为主牌，不受主花色影响。包含：<strong>方块3（天王）、大王、小王、全部7、全部2</strong></p>
+<p>牌力从大到小排序：</p>
+<div class="code-block">
+方块3(天王) ＞ 大王 ＞ 小王 ＞ 主7 ＞ 副7 ＞ 主2 ＞ 副2 ＞ A ＞ K ＞ Q ＞ J ＞ 10 ＞ 9 ＞ 8 ＞ 6 ＞ 5 ＞ 4 ＞ 普通3
+</div>
+<ul>
+    <li>主7大于所有副7；主2大于所有副2。</li>
+    <li>同级别的副7、副2之间，先出牌者更大。</li>
+</ul>
+
+<h3>3.2 分数牌</h3>
+<ul>
+    <li>5 = 5分，10 = 10分，K = 10分。</li>
+    <li>每副牌总分50分，N副牌总分 = 50 × N。</li>
+</ul>
+
+<h3>3.3 支持牌型</h3>
+<ol>
+    <li><strong>单张</strong>：任意一张牌。</li>
+    <li><strong>对子</strong>：两张点数、花色完全相同的牌。</li>
+    <li><strong>三张</strong>：三张点数、花色完全相同的牌。</li>
+    <li><strong>连对（拖拉机）</strong>：至少 2 组同花色、连续的对子，组数不限。如 33+44、33+44+55+66；允许 K-A-2-3 跨接。</li>
+    <li><strong>连三张</strong>：至少 2 组同花色、连续的三张。如 444+555、444+555+666。</li>
+    <li><strong>王组合</strong>：大王组 + 小王组且两组张数相同。如大王对+小王对、三大王+三小王。王组合能压同张数的连对和连三张。</li>
+    <li><strong>甩牌</strong>：首家可甩出同花色的若干单张+若干对子，要求甩出的每一张/每一对都是该花色场上现存最大。</li>
+</ol>
+<div class="warning">
+    <strong>连对／连三张的硬约束</strong>
+    <ul>
+        <li><strong>主牌和副牌不能一起成组。</strong>7 和 2 是常主（主牌），所以副花色连对不能含 7 或 2，也不能跨过它们接续。
+            例：主是♠时，♦6♦6+♦7♦7 和 ♦6♦6+♦8♦8 都<strong>不成立</strong>；但主是♦时整手都是主牌，♦6♦6+♦7♦7 就成立。</li>
+        <li>大小王没有花色，不能参与连对／连三张（要成组只能用「王组合」）。</li>
+        <li>组合牌型按<strong>牌面点数</strong>比大小。主花色的 3 是天王，但在连对／连三张里只按点数 3 参与，
+            单出或出对子、三张时才是最大牌。</li>
+    </ul>
+</div>
+<div class="warning">
+    <strong>禁止牌型</strong>
+    <ul>
+        <li>不支持顺子（五张及以上同花色连续单张不是合法牌型）。</li>
+    </ul>
+</div>
+
+<h3>3.4 跟牌规则</h3>
+<ol>
+    <li>首家出任意花色，其他玩家<strong>有同花色必须跟同花色</strong>。</li>
+    <li>首家出对子，玩家有同花色对子必须跟对子；无对子则跟同花色单张。</li>
+    <li>无首家花色时：可垫其他副牌（无法赢本轮），或用<strong>主牌杀牌</strong>赢下本轮。</li>
+    <li>主牌可以杀任意副牌；不同副花色之间，首家花色为大，其余为垫牌。</li>
+</ol>
+
+<h3>3.5 甩牌校验规则</h3>
+<ol>
+    <li>首家可以甩主牌；副牌是否可甩由房间开关控制（默认开启）。</li>
+    <li>甩出的所有单张、对子，必须是该花色当前场上剩余牌中的最大。</li>
+    <li>若任意玩家手中存在比甩出的某张/某对更大的牌 → <strong>甩牌失败</strong>，强制玩家出该花色最小的一张牌，整套甩牌作废。</li>
+</ol>
+
+<h3>3.6 抠底规则</h3>
+<ol>
+    <li>最后一轮出牌，获胜方若打出的是<strong>主牌</strong>，则触发抠底：底牌中所有分数全部归获胜阵营。</li>
+    <li>最后一轮获胜方打出的是副牌 → 不抠底，底牌分数直接作废。</li>
+    <li>庄家赢抠底：底牌分计入庄家得分；闲家赢抠底：底牌分计入闲家总得分。</li>
+</ol>
+
+<h2>四、完整游戏流程</h2>
+<p>所有模式流程一致：创建房间 → 人满开局 → 发牌+叫主 → 叫分定庄 → 庄家扣底 → 出牌对局 → 抠底结算 → 积分结算 → 下一局</p>
+
+<h3>4.1 发牌与叫主阶段</h3>
+<ol>
+    <li>系统洗牌，逆时针发牌；发牌过程中同步开放叫主权限。</li>
+    <li>玩家手牌中有7，可亮出一张7定主花色，该7的花色即为本局主花色。</li>
+    <li>每人仅1次叫主机会，放弃后本局不可再叫主。</li>
+    <li>后续玩家可亮出其他花色7进行反主，覆盖当前主花色。</li>
+    <li>全程无人叫主：翻开底牌第6张，以该牌花色定主；翻出大小王则顺延下一张。</li>
+</ol>
+
+<h3>4.2 叫分与定庄家</h3>
+<ol>
+    <li>逆时针轮流叫分，只能报5的倍数，不可高于上限、不可低于下限。</li>
+    <li>玩家可选择「叫更低分」或「放弃」；放弃后本局不可再参与叫分。</li>
+    <li><strong>叫分最低者成为本局庄家</strong>。庄家目标：本局得分 ≥ 叫分；闲家目标：阻止庄家达到叫分。</li>
+    <li><strong>全部玩家放弃叫分 → 流局</strong>
+        <ul>
+            <li>不进行出牌环节；</li>
+            <li>统计所有玩家「流动主」数量：流动主 = 天王 + 大小王 + 全部7 + 全部2；</li>
+            <li>流动主数量最多的玩家为本局负方，扣除对应积分，直接开启下一局。</li>
+        </ul>
+    </li>
+</ol>
+
+<h3>4.3 底牌与扣底</h3>
+<ol>
+    <li>庄家获得全部底牌，手牌数量 = 发牌数 + 底牌数。</li>
+    <li>庄家必须选出对应数量的牌扣回底牌（扣底），手牌回到初始发牌数。</li>
+    <li>扣底数量不符时，禁止确认扣底。</li>
+    <li>扣底牌对其他玩家不可见，仅结算时翻开。</li>
+</ol>
+
+<h3>4.4 出牌对局</h3>
+<ol>
+    <li>庄家首轮先出牌；后续每轮由上一轮最大牌玩家先出牌。</li>
+    <li>逆时针轮流出牌，遵循跟牌规则。</li>
+    <li>每轮结束后，获胜方收取本轮所有分数牌，累计到对应阵营得分。</li>
+</ol>
+
+<h3>4.5 胜负结算</h3>
+<p>闲家总得分 = 桌面抓获分数 +（抠底成功则加底牌分数）</p>
+<ul>
+    <li>庄家胜利：庄家得分 ≥ 本局叫分</li>
+    <li>闲家胜利：闲家总得分 ＞（全局总分 - 叫分）</li>
+</ul>
+
+<h3>4.6 庄家轮转</h3>
+<ul>
+    <li>庄家本局获胜：下一局继续坐庄。</li>
+    <li>庄家本局失败：庄家位置逆时针下移一位。</li>
+</ul>
+
+<h2>五、房间可选开关（创建房间时可配置）</h2>
+<table>
+    <tr>
+        <th>开关项</th><th>默认值</th><th>说明</th>
+    </tr>
+    <tr>
+        <td>允许副牌甩牌</td><td>开启</td><td>关闭后仅主牌可甩牌</td>
+    </tr>
+    <tr>
+        <td>允许反天王</td><td>关闭</td><td>绝大多数五华玩法方块3永久最大，不建议开启</td>
+    </tr>
+    <tr>
+        <td>出对子必须跟对子</td><td>开启</td><td>关闭后有对子可不跟，仅跟同花色即可</td>
+    </tr>
+</table>
+
+<h2>六、核心开发函数清单（后端/逻辑层必实现）</h2>
+<div class="code-block">
+// 1. 牌力比较
+compareCard(cardA, cardB, mainSuit) : number  // 返回 1:A大 / -1:B大 / 0:平
+
+// 2. 甩牌合法性校验
+checkToss(tossCards, allPlayerHands, mainSuit, allowSubSuitToss) : {success:boolean, minCard:object}
+
+// 3. 跟牌合法性校验
+checkFollow(firstCards, playerCards, mainSuit, mustFollowPair) : boolean
+
+// 4. 分数计算
+calcScore(takenCards, bottomCards, isKouDi) : number
+
+// 5. 流动主统计（流局用）
+countFlowMain(playerHand) : number
+
+// 6. 模式配置读取
+getRoomConfig(mode) : configObject
+
+// 7. 胜负判定
+judgeWinner(bankerScore, idleScore, callScore, totalScore) : winner
+</div>
+
+<h2>七、异常与离线处理</h2>
+<ol>
+    <li>玩家离线/退出：自动托管出牌，优先跟花色、跟对子，不主动甩牌。</li>
+    <li>超时未操作：叫主/叫分阶段自动放弃；出牌阶段自动出最小合法牌。</li>
+    <li>房间人数不足：不可开始游戏，等待玩家加入。</li>
+</ol>
+
+<h2>八、前端UI页面规范</h2>
+<h3>8.1 首页/创建房间页</h3>
+<ul>
+    <li>模式选择：3人场 / 4人标准 / 4人加强 / 5人场 / 6人场</li>
+    <li>房间开关配置面板</li>
+    <li>创建房间、加入房间、房间号分享</li>
+</ul>
+
+<h3>8.2 对局界面</h3>
+<ul>
+    <li>顶部状态条：当前阶段（叫主/叫分/扣底/出牌/结算）、主花色标识、当前叫分、庄家标记</li>
+    <li>四周玩家头像、积分、已抓分数展示</li>
+    <li>底部手牌区、出牌按钮、甩牌按钮、确认扣底按钮</li>
+    <li>中央出牌区、桌面总分显示</li>
+</ul>
+
+<h3>8.3 结算弹窗</h3>
+<ul>
+    <li>展示本局胜负、各方得分、叫分、抠底情况、积分变动</li>
+    <li>按钮：继续下一局、返回大厅</li>
+</ul>
+
+<h3>8.4 帮助页</h3>
+<p>提供玩家版简化规则说明，不含技术参数。</p>
+
+<h2>九、核心测试用例</h2>
+<ol>
+    <li>4人2副，叫分80，庄家刚好80分 → 庄家胜。</li>
+    <li>4人2副，叫分80，闲家得21分 → 闲家胜。</li>
+    <li>最后一轮闲家主牌获胜 → 抠底成功，底牌分计入闲家。</li>
+    <li>最后一轮闲家副牌获胜 → 不抠底，底牌分作废。</li>
+    <li>甩牌包含非最大牌 → 甩牌失败，强制出最小牌。</li>
+    <li>全员放弃叫分 → 流局，统计流动主数量判负。</li>
+    <li>切换3人/5人/6人模式 → 底牌、扣底数、总分、叫分区间自动适配。</li>
+    <li>关闭副牌甩牌开关 → 副牌甩牌提示不可用。</li>
+</ol>
+
+<h2>十、非MVP范围（本期不开发）</h2>
+<ul>
+    <li>排位赛、段位系统、排行榜</li>
+    <li>商城、道具、充值体系</li>
+    <li>语音聊天、文字聊天</li>
+    <li>游客模式以外的复杂账号体系</li>
+</ul>
+
+<div class="footer-note">
+    本文档为五华天王小程序开发专用，所有规则基于梅州五华本地民间玩法整理，多人扩展模式为平衡化适配。<br>
+    保存方式：浏览器按 Ctrl+S 即可下载为本地HTML文件。
+</div>
+
+</div>
+</body>
+</html>

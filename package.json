@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "name": "wuhua-tianwang-poker",
+  "description": "梅州五华天王扑克：前后端分仓，依赖各自装在 client/ 与 server/。",
+  "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/share": "^8.0.1"
+  },
+  "scripts": {
+    "android:build": "cd client && npm run build && cd .. && npx cap sync android && cd android && ./gradlew assembleRelease && cd .. && mkdir -p releases && cp android/app/build/outputs/apk/release/app-release.apk releases/wuhuatianwang-android.apk",
+    "android:debug": "cd client && npm run build && cd .. && npx cap sync android && cd android && ./gradlew assembleDebug"
+  }
+}

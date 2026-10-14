@@ -1,0 +1,854 @@
+/* ===== 经典模式场次选择页 =====
+ * 横屏优先，精致按钮风格
+ */
+
+@import './tokens.css';
+
+.classic-hall {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(255,255,255,0.18) 0%, transparent 70%),
+    url('/assets/ui/bg-main.webp') center / cover no-repeat,
+    linear-gradient(135deg, #4A6BD4 0%, #6A58CC 50%, #8E6FDD 100%);
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  animation: classicHallEnter 0.4s var(--ease-out);
+}
+
+@keyframes classicHallEnter {
+  from {
+    opacity: 0;
+    transform: translateY(calc(16 * var(--u)));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* === 顶部栏 === */
+.classic-hall-header {
+  display: flex;
+  align-items: center;
+  gap: calc(14 * var(--u));
+  padding: calc(8 * var(--u)) calc(16 * var(--u));
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+.classic-hall-back {
+  width: calc(36 * var(--u));
+  height: calc(36 * var(--u));
+  border-radius: 50%;
+  background: rgba(255,255,255,0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4338CA;
+  cursor: pointer;
+  transition: transform 0.15s;
+  box-shadow:
+    0 calc(3 * var(--u)) calc(10 * var(--u)) rgba(0,0,0,0.15),
+    inset 0 calc(2 * var(--u)) 0 rgba(255,255,255,0.8);
+  border: none;
+  flex-shrink: 0;
+}
+.classic-hall-back:active { transform: scale(0.9); }
+
+.classic-hall-tabs {
+  display: flex;
+  align-items: center;
+  gap: calc(16 * var(--u));
+}
+.classic-hall-tab {
+  font-size: calc(20 * var(--ut));
+  font-weight: 700;
+  color: rgba(253,230,138,0.82);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.classic-hall-tab.is-active {
+  color: #FCD34D;
+  font-size: calc(26 * var(--ut));
+  font-weight: 800;
+  text-shadow: 0 calc(2 * var(--u)) calc(6 * var(--u)) rgba(0,0,0,0.3);
+}
+.classic-hall-tab.is-active::after {
+  content: '';
+  position: absolute;
+  bottom: calc(-6 * var(--u));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(28 * var(--u));
+  height: calc(4 * var(--u));
+  background: #FBBF24;
+  border-radius: calc(2 * var(--u));
+  box-shadow: 0 0 calc(8 * var(--u)) rgba(251,191,36,0.6);
+}
+
+.classic-hall-spacer { flex: 1; }
+
+/* 等级条 */
+.classic-hall-level-bar {
+  display: flex;
+  align-items: center;
+  gap: calc(8 * var(--u));
+  padding: calc(6 * var(--u)) calc(14 * var(--u));
+  background: rgba(255,255,255,0.92);
+  border-radius: calc(24 * var(--u));
+  box-shadow:
+    0 calc(3 * var(--u)) calc(10 * var(--u)) rgba(0,0,0,0.12),
+    inset 0 calc(2 * var(--u)) 0 rgba(255,255,255,0.8);
+}
+.classic-hall-level-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(4 * var(--u));
+  padding: calc(2 * var(--u)) calc(8 * var(--u));
+  background: linear-gradient(135deg, #10B981, #059669);
+  border-radius: calc(16 * var(--u));
+  font-size: calc(10 * var(--ut));
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(16,185,129,0.4);
+}
+.classic-hall-level-badge::before { content: '★'; }
+.classic-hall-level-progress {
+  font-size: calc(12 * var(--ut));
+  font-weight: 700;
+  color: #1E3A8A;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 金币/星星 */
+.classic-hall-coins {
+  display: flex;
+  align-items: center;
+  gap: calc(6 * var(--u));
+  padding: calc(5 * var(--u)) calc(14 * var(--u)) calc(5 * var(--u)) calc(5 * var(--u));
+  background: #fff;
+  border-radius: calc(24 * var(--u));
+  box-shadow:
+    0 calc(3 * var(--u)) calc(10 * var(--u)) rgba(0,0,0,0.12),
+    inset 0 calc(2 * var(--u)) 0 rgba(255,255,255,0.8);
+  font-size: calc(14 * var(--ut));
+  font-weight: 800;
+  color: #1E3A8A;
+  font-variant-numeric: tabular-nums;
+  position: relative;
+}
+.classic-hall-coins::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 20%; right: 20%;
+  height: 40%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.6), transparent);
+  border-radius: calc(24 * var(--u)) calc(24 * var(--u)) 0 0;
+  pointer-events: none;
+}
+.classic-hall-coin-icon {
+  width: calc(26 * var(--u));
+  height: calc(26 * var(--u));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+.classic-hall-coin-icon:first-of-type {
+  background: radial-gradient(circle at 30% 25%, #FEF08A, #EAB308);
+  color: #92400E;
+  box-shadow: inset 0 calc(1 * var(--u)) calc(2 * var(--u)) rgba(255,255,255,0.6);
+}
+.classic-hall-coin-add {
+  width: calc(20 * var(--u));
+  height: calc(20 * var(--u));
+  border-radius: 50%;
+  background: linear-gradient(135deg, #22C55E, #16A34A);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(14 * var(--u));
+  font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(22,163,74,0.4);
+  position: relative;
+  z-index: 1;
+}
+
+/* === 主内容 === */
+.classic-hall-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  position: relative;
+}
+
+.classic-hall-content {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  padding: calc(6 * var(--u)) calc(18 * var(--u));
+  gap: calc(14 * var(--u));
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* 左侧人数选择面板 */
+.classic-hall-left-col {
+  /* 原来是 width:170*--u，横屏 --u≈0.63px 时只有 93~107px，
+     扣掉 24px 内边距 + 28*--u 图标后留给「三人模式」的净宽不足，
+     标签 nowrap 直接右溢出（667x340 实测溢出 10.9px）。
+     改成 max() 给绝对下限，保证四个字 + 图标永远装得下。 */
+  width: max(calc(178 * var(--u)), 132px);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(10 * var(--u));
+  padding: calc(12 * var(--u)) calc(11 * var(--u)) calc(13 * var(--u));
+  /* 原来是 rgba(255,255,255,0.08) 白玻璃 —— 铺在同样偏亮的背景大图上
+     几乎分辨不出这是一个独立板块。改成深紫底 + 金边，层级立刻清楚。 */
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.10) 0%, transparent 26%),
+    linear-gradient(165deg, rgba(58,44,110,0.90) 0%, rgba(30,22,62,0.94) 100%);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  border-radius: calc(16 * var(--u));
+  border: calc(1.5 * var(--u)) solid rgba(251,191,36,0.42);
+  box-shadow:
+    0 calc(8 * var(--u)) calc(22 * var(--u)) rgba(0,0,0,0.38),
+    0 0 calc(16 * var(--u)) rgba(251,191,36,0.10),
+    inset 0 calc(1 * var(--u)) 0 rgba(255,255,255,0.22);
+  position: relative;
+  align-self: center;
+  animation: fadeSlideIn 0.4s var(--ease-out) 0.1s both;
+  max-height: 100%;
+}
+.classic-hall-left-col::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 15%; right: 15%;
+  height: 25%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.1), transparent);
+  border-radius: calc(14 * var(--u)) calc(14 * var(--u)) 0 0;
+  pointer-events: none;
+}
+
+.classic-hall-mode-title {
+  font-size: max(calc(13 * var(--ut)), 11px);
+  font-weight: 800;
+  color: #FCD34D;
+  letter-spacing: calc(3 * var(--u));
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+.classic-hall-mode-title::after {
+  content: '';
+  display: block;
+  width: calc(20 * var(--u));
+  height: calc(2 * var(--u));
+  background: linear-gradient(90deg, transparent, rgba(251,191,36,0.6), transparent);
+  margin: calc(5 * var(--u)) auto 0;
+  border-radius: calc(1 * var(--u));
+}
+
+/* 「选择人数」提示行：原来左栏只有一个「天王升级」标题，
+   用户根本看不出下面那四个块是"选人数"。 */
+.classic-hall-left-hint {
+  font-size: max(calc(12 * var(--ut)), 10px);
+  font-weight: 700;
+  color: rgba(253,230,138,0.78);
+  letter-spacing: calc(2 * var(--u));
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  margin-top: calc(-2 * var(--u));
+}
+
+/* 人数切换 */
+.classic-hall-player-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: calc(6 * var(--u));
+  position: relative;
+  z-index: 1;
+}
+.classic-hall-player-tab {
+  display: flex;
+  align-items: center;
+  gap: calc(10 * var(--u));
+  padding: calc(8 * var(--u)) calc(10 * var(--u));
+  min-height: max(calc(38 * var(--u)), 34px);
+  cursor: pointer;
+  transition: all 0.2s var(--ease-spring);
+  border-radius: calc(9 * var(--u));
+  border: calc(1 * var(--u)) solid rgba(251,191,36,0.32);
+  background: linear-gradient(135deg, rgba(58,44,110,0.85), rgba(32,24,66,0.8));
+}
+.classic-hall-player-tab:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.2);
+}
+.classic-hall-player-tab:active { transform: scale(0.97); }
+.classic-hall-player-icon {
+  width: calc(28 * var(--u));
+  height: calc(28 * var(--u));
+  border-radius: calc(7 * var(--u));
+  background: rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.classic-hall-player-tab.is-active .classic-hall-player-icon {
+  background: linear-gradient(135deg, #FBBF24, #F59E0B);
+  box-shadow:
+    0 calc(2 * var(--u)) calc(6 * var(--u)) rgba(245,158,11,0.45),
+    inset 0 calc(1 * var(--u)) 0 rgba(255,255,255,0.7);
+}
+.classic-hall-player-label {
+  font-size: max(calc(15 * var(--ut)), 13px);
+  font-weight: 700;
+  color: #F5F3FF;
+  /* flex:1 + nowrap 会硬顶出容器；这里允许收缩并用省略号兜底，
+     宽度已由左栏的 132px 下限保证正常情况下不会触发省略。 */
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.classic-hall-player-tab.is-active {
+  background: linear-gradient(135deg, #FDE68A, #F59E0B);
+  border-color: rgba(255,255,255,0.55);
+  box-shadow:
+    0 calc(3 * var(--u)) calc(10 * var(--u)) rgba(0,0,0,0.28),
+    0 0 calc(14 * var(--u)) rgba(245,158,11,0.4),
+    inset 0 calc(1 * var(--u)) 0 rgba(255,255,255,0.75);
+}
+.classic-hall-player-tab.is-active .classic-hall-player-label {
+  color: #4C1D95;
+  font-weight: 900;
+}
+.classic-hall-player-tab.is-active .classic-hall-player-icon {
+  background: rgba(76,29,149,0.9);
+}
+
+/* 右侧场次 */
+.classic-hall-right-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.classic-hall-rooms-scroll {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  /* gap 原本只有 8*--u ≈ 5px，看着"间距太大"其实不是 gap 的问题：
+     卡片自己写了 aspect-ratio:3/4，高度被 max-height 锁住后宽度被
+     比例反推成列宽的 61%（844x390 实测 103.8px / 171.4px），
+     剩下 67px 全是卡片缩出来的空白。见 .classic-room-card。 */
+  gap: calc(10 * var(--u));
+  overflow: visible;
+  align-content: center;
+  align-items: center;
+  justify-items: stretch;
+  min-height: 0;
+}
+
+/* 场次卡片 */
+.classic-room-card {
+  position: relative;
+  border-radius: calc(16 * var(--u));
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-spring);
+  box-shadow:
+    0 calc(6 * var(--u)) calc(18 * var(--u)) rgba(0,0,0,0.32),
+    0 0 0 calc(1.5 * var(--u)) rgba(251,191,36,0.42),
+    inset 0 calc(2 * var(--u)) 0 rgba(255,255,255,0.18);
+  /* 关键改动：补上 width:100%，并去掉 max-height。
+     真正的病根是「只写了 aspect-ratio 却没写 width」：grid item 一旦有
+     aspect-ratio，默认的 stretch 就不再生效，于是高度先被 max-height
+     截断、宽度再按 3:4 反推 —— 844x390 实测卡宽 103.8px / 列宽 171.4px，
+     只占 61%，剩下 67px 全是卡片自己缩出来的空白，看着就是"间距太大"。
+     width 显式给 100% 后 aspect-ratio 只负责推高度，宽度稳定吃满整列。 */
+  width: 100%;
+  /* 保留设计稿的 3:4 竖版比例，但由 width 主导、aspect-ratio 只推高度 */
+  aspect-ratio: 3 / 4;
+  max-height: 100%;
+  min-height: 0;
+  animation: fadeSlideIn 0.4s var(--ease-out) both;
+}
+.classic-room-card:nth-child(1) { animation-delay: 0.15s; }
+.classic-room-card:nth-child(2) { animation-delay: 0.22s; }
+.classic-room-card:nth-child(3) { animation-delay: 0.29s; }
+.classic-room-card:nth-child(4) { animation-delay: 0.36s; }
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(calc(12 * var(--u)));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.classic-room-card.is-selected {
+  /* 卡片现在吃满 grid 行，再 scale(1.03) 会顶出内容区（上下各溢 2%）。
+     改成只上移不放大，边框光晕负责强调。 */
+  transform: translateY(calc(-3 * var(--u)));
+  box-shadow:
+    0 calc(12 * var(--u)) calc(28 * var(--u)) rgba(0,0,0,0.28),
+    0 0 0 calc(3 * var(--u)) #FBBF24,
+    0 0 calc(20 * var(--u)) rgba(251,191,36,0.5),
+    inset 0 calc(2 * var(--u)) 0 rgba(255,255,255,0.6);
+}
+/* 这条原来写 inset:calc(-6*var(--u))，想在卡片外画一圈脉冲光环，
+   但 .classic-room-card 自己是 overflow:hidden —— 外扩部分被整圈裁掉，
+   动画等于没生效（用户反馈"选中只有描边变化"就是这个原因）。
+   改成内环，画在卡片内部，脉冲才看得见。 */
+.classic-room-card.is-selected::after {
+  content: '';
+  position: absolute;
+  inset: calc(3 * var(--u));
+  border-radius: calc(12 * var(--u));
+  border: calc(2 * var(--u)) solid rgba(251,191,36,0.75);
+  box-shadow: 0 0 calc(12 * var(--u)) rgba(251,191,36,0.45) inset;
+  animation: goldPulse 2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 3;
+}
+@keyframes goldPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+.classic-room-card:active { transform: scale(0.97); }
+
+.classic-room-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center top;
+}
+.classic-room-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(12,9,28,0.52) 0%, rgba(12,9,28,0.18) 28%, rgba(12,9,28,0.04) 55%, rgba(12,9,28,0.46) 82%, rgba(12,9,28,0.72) 100%);
+  pointer-events: none;
+}
+
+.classic-room-content {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: calc(4 * var(--u));
+  padding: calc(10 * var(--u)) calc(10 * var(--u)) calc(9 * var(--u));
+  min-height: 0;
+}
+
+/* 标题行：左标题 + 右「已选」角标 */
+.classic-room-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(6 * var(--u));
+  flex: 0 0 auto;
+  padding: calc(3 * var(--u)) calc(5 * var(--u));
+  margin: calc(-3 * var(--u)) calc(-5 * var(--u)) 0;
+  border-radius: calc(9 * var(--u));
+  background: linear-gradient(90deg, rgba(8,10,26,0.72), rgba(8,10,26,0.16));
+}
+.classic-room-check {
+  flex: 0 0 auto;
+  padding: calc(1 * var(--u)) calc(6 * var(--u));
+  border-radius: calc(20 * var(--u));
+  background: linear-gradient(135deg, #FDE68A, #F59E0B);
+  color: #2E0F5C;
+  font-size: max(calc(10 * var(--ut)), 9px);
+  font-weight: 900;
+  line-height: 1.5;
+  white-space: nowrap;
+  box-shadow: 0 calc(1 * var(--u)) calc(4 * var(--u)) rgba(0,0,0,0.35);
+}
+
+.classic-room-title {
+  font-size: max(calc(17 * var(--ut)), 14px);
+  font-weight: 900;
+  letter-spacing: calc(1 * var(--u));
+  line-height: 1.25;
+  white-space: nowrap;
+  text-shadow:
+    0 calc(1 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,0.75),
+    0 0 calc(10 * var(--u)) rgba(20,15,44,0.6);
+}
+.classic-room-card--easy .classic-room-title { color: #A7F3D0; }
+.classic-room-card--mid .classic-room-title { color: #C7D2FE; }
+.classic-room-card--high .classic-room-title { color: #EDE9FE; }
+.classic-room-card--master .classic-room-title { color: #FDE68A; }
+
+.classic-room-stake {
+  margin-top: 0;
+  font-size: max(calc(11 * var(--ut)), 10px);
+  color: #EDE9FE;
+  font-weight: 700;
+  text-shadow: 0 calc(1 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,0.85);
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: calc(4 * var(--u));
+  flex: 0 0 auto;
+  width: fit-content;
+  padding: calc(2 * var(--u)) calc(6 * var(--u));
+  border-radius: calc(9 * var(--u));
+  background: rgba(8,10,26,0.46);
+}
+.classic-room-stake-label {
+  font-size: max(calc(10 * var(--ut)), 9px);
+  font-weight: 700;
+  opacity: 0.72;
+  flex: 0 0 auto;
+}
+.classic-room-stake strong {
+  font-size: max(calc(28 * var(--u)), 20px);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: calc(-1 * var(--u));
+  line-height: 1;
+}
+.classic-room-stake strong { color: #FFFFFF; text-shadow: 0 calc(1 * var(--u)) calc(4 * var(--u)) rgba(0,0,0,0.9), 0 0 calc(10 * var(--u)) rgba(0,0,0,0.6); }
+.classic-room-card--easy .classic-room-stake strong { color: #D1FAE5; }
+.classic-room-card--mid .classic-room-stake strong { color: #E0E7FF; }
+.classic-room-card--high .classic-room-stake strong { color: #F5F3FF; }
+.classic-room-card--master .classic-room-stake strong { color: #FEF3C7; }
+
+/* 原 .classic-room-ip 是一个 58*--u 的 emoji 大图形。
+   卡片底图 bg-easy/mid/high/master.webp 本身就是主视觉，
+   再压一个 emoji 属于重复且抢焦点，已移除。
+   这块位置改放真实牌局参数。 */
+.classic-room-art-space {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.classic-room-meta {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: calc(3 * var(--u));
+  padding: calc(5 * var(--u)) calc(7 * var(--u));
+  border-radius: calc(9 * var(--u));
+  background: linear-gradient(135deg, rgba(8,10,26,0.74), rgba(24,20,52,0.58));
+  border: calc(1 * var(--u)) solid rgba(255,255,255,0.16);
+  overflow: hidden;
+}
+.classic-room-meta-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: calc(4 * var(--u));
+  font-size: max(calc(10 * var(--ut)), 9px);
+  line-height: 1.35;
+  white-space: nowrap;
+}
+.classic-room-meta-row > span {
+  flex: 0 0 auto;
+  color: rgba(237,233,254,0.72);
+  font-weight: 700;
+}
+.classic-room-meta-row > b {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: right;
+  color: #FDE68A;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.classic-room-footer {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  font-size: max(calc(10 * var(--ut)), 9px);
+  color: rgba(255,255,255,0.9);
+  font-weight: 700;
+  flex: 0 0 auto;
+  line-height: 1.35;
+  min-height: 1.35em;
+  text-shadow: 0 calc(1 * var(--u)) calc(2 * var(--u)) rgba(0,0,0,0.6);
+}
+.classic-room-people {
+  display: flex;
+  align-items: center;
+  gap: calc(4 * var(--u));
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.classic-room-people::before {
+  content: '';
+  flex: 0 0 auto;
+  width: max(calc(8 * var(--u)), 5px);
+  height: max(calc(8 * var(--u)), 5px);
+  border-radius: 50%;
+  background: #34D399;
+  box-shadow: 0 0 calc(5 * var(--u)) rgba(52,211,153,0.8);
+}
+.classic-room-entry {
+  display: flex;
+  align-items: center;
+  gap: calc(4 * var(--u));
+  color: #FCD34D;
+  font-weight: 800;
+}
+.classic-room-entry::before {
+  content: '';
+  width: calc(14 * var(--u));
+  height: calc(14 * var(--u));
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, #FEF08A, #F59E0B);
+  box-shadow: 0 calc(2 * var(--u)) calc(4 * var(--u)) rgba(0,0,0,0.15);
+}
+
+/* === 底部按钮 === */
+.classic-hall-actions {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  gap: calc(16 * var(--u));
+  padding: calc(6 * var(--u)) calc(32 * var(--u)) calc(10 * var(--u));
+  position: relative;
+  z-index: 10;
+  animation: fadeSlideIn 0.4s var(--ease-out) 0.45s both;
+}
+.classic-hall-btn {
+  min-width: max(calc(180 * var(--u)), 130px);
+  height: max(calc(50 * var(--u)), 40px);
+  padding: 0 calc(32 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: calc(50 * var(--u));
+  font-size: max(calc(20 * var(--ut)), 15px);
+  font-weight: 900;
+  letter-spacing: calc(4 * var(--u));
+  cursor: pointer;
+  transition: all 0.2s var(--ease-spring);
+  position: relative;
+  overflow: hidden;
+  font-family: inherit;
+}
+.classic-hall-btn:active { transform: translateY(calc(1 * var(--u))) scale(0.97); }
+
+.classic-hall-btn--private {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 30%),
+    linear-gradient(135deg,
+      #8B5CF6 0%,
+      #7C3AED 32%,
+      #6D28D9 64%,
+      #5B21B6 100%);
+  color: #FEF3C7;
+  border: calc(2 * var(--u)) solid rgba(251, 191, 36, 0.6);
+  box-shadow:
+    0 calc(6 * var(--u)) calc(18 * var(--u)) rgba(109, 40, 217, 0.4),
+    inset 0 calc(2 * var(--u)) 0 rgba(255,255,255,0.25);
+  text-shadow: 0 calc(1 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,0.3);
+}
+.classic-hall-btn--private:hover {
+  transform: translateY(calc(-1 * var(--u)));
+  box-shadow:
+    0 calc(8 * var(--u)) calc(22 * var(--u)) rgba(109, 40, 217, 0.5),
+    inset 0 calc(2 * var(--u)) 0 rgba(255,255,255,0.3);
+}
+
+.classic-hall-btn--quick {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.18) 0%, transparent 30%),
+    linear-gradient(135deg,
+      #7C3AED 0%,
+      #6D28D9 30%,
+      #5B21B6 65%,
+      #4C1D95 100%);
+  color: #FEF3C7;
+  border: calc(2 * var(--u)) solid rgba(251, 191, 36, 0.8);
+  box-shadow:
+    0 calc(8 * var(--u)) calc(22 * var(--u)) rgba(91, 33, 182, 0.5),
+    0 0 calc(12 * var(--u)) rgba(251,191,36,0.12) inset,
+    inset 0 calc(2 * var(--u)) 0 rgba(255,255,255,0.2);
+  text-shadow: 0 calc(1 * var(--u)) calc(3 * var(--u)) rgba(0,0,0,0.3);
+}
+.classic-hall-btn--quick:hover {
+  transform: translateY(calc(-2 * var(--u)));
+  box-shadow:
+    0 calc(10 * var(--u)) calc(28 * var(--u)) rgba(91, 33, 182, 0.55),
+    0 0 calc(16 * var(--u)) rgba(251,191,36,0.2) inset,
+    inset 0 calc(2 * var(--u)) 0 rgba(255,255,255,0.25);
+}
+.classic-hall-btn--quick::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -30%;
+  width: 20%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+  transform: skewX(-20deg);
+  animation: shimmer 3.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -25%; }
+  100% { left: 115%; }
+}
+
+/* === 竖屏适配 === */
+@media (orientation: portrait) and (max-width: 900px) {
+  .classic-hall-content {
+    flex-direction: column;
+    padding: calc(12 * var(--u)) calc(16 * var(--u));
+    gap: calc(12 * var(--u));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .classic-hall-left-col {
+    width: auto;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: calc(10 * var(--u)) calc(14 * var(--u));
+    max-height: none;
+  }
+  .classic-hall-left-hint { margin-top: 0; }
+  .classic-hall-mode-title { font-size: calc(24 * var(--u)); }
+  .classic-hall-player-tabs {
+    flex-direction: row;
+    flex: 1;
+    gap: calc(6 * var(--u));
+  }
+  .classic-hall-player-label { font-size: calc(16 * var(--ut)); }
+  .classic-hall-player-icon { width: calc(30 * var(--u)); height: calc(30 * var(--u)); }
+  .classic-hall-player-tab { padding: calc(6 * var(--u)) calc(10 * var(--u)); gap: calc(6 * var(--u)); }
+
+  .classic-hall-rooms-scroll {
+    /* 竖屏 390 宽塞 4 列时每列只有 88px，卡片里的「2副 · 36张」必被省略。
+       改 2x2，每列 ~180px 就宽裕了。 */
+    grid-template-columns: repeat(2, 1fr);
+    gap: calc(10 * var(--u));
+    align-content: start;
+  }
+  .classic-room-card {
+    height: auto;
+    aspect-ratio: 4 / 3;
+    max-height: calc(210 * var(--u));
+  }
+
+  .classic-hall-actions { padding: calc(10 * var(--u)) calc(16 * var(--u)) calc(16 * var(--u)); gap: calc(12 * var(--u)); }
+  .classic-hall-btn { min-width: 0; flex: 1; height: calc(52 * var(--u)); font-size: calc(20 * var(--u)); }
+}
+
+/* ===== 顶栏「详细」面板 ===== */
+.classic-hall-detail {
+  margin: calc(8 * var(--u)) calc(14 * var(--u)) 0;
+  padding: calc(12 * var(--u)) calc(14 * var(--u));
+  border-radius: calc(12 * var(--u));
+  border: 1px solid rgba(232, 211, 168, 0.28);
+  background: rgba(10, 20, 38, 0.72);
+}
+.classic-hall-detail-title {
+  margin-bottom: calc(8 * var(--u));
+  font-size: calc(15 * var(--u));
+  font-weight: 800;
+  color: #E8D3A8;
+}
+.classic-hall-detail-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(4 * var(--u)) calc(16 * var(--u));
+}
+.classic-hall-detail-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: calc(8 * var(--u));
+  font-size: calc(13 * var(--u));
+  color: #9EACC8;
+}
+.classic-hall-detail-list strong { color: #E4EAF6; font-weight: 700; text-align: right; }
+.classic-hall-detail-note {
+  margin-top: calc(8 * var(--u));
+  font-size: calc(12 * var(--u));
+  color: #8C9BBB;
+  line-height: 1.6;
+}
+@media (max-width: 520px) {
+  .classic-hall-detail-list { grid-template-columns: 1fr; }
+}
+
+/* 金币/星币「+」改成真按钮后要去掉浏览器默认样式 */
+.classic-hall-coin-add {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* 顶栏 tab 改成真按钮后同样去默认样式 */
+.classic-hall-tab {
+  border: none;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* ===== 场次余额不足：卡片压暗 + 圆点改红 =====
+   以前底部显示的是写死的假在玩人数，现在改成"可进 / 还差多少金币"，
+   进不去的场次一眼能看出来，不用点了才被服务端踢回来。 */
+.classic-room-card.is-locked .classic-room-bg {
+  filter: saturate(0.82) brightness(0.9);
+}
+.classic-room-card.is-locked {
+  /* 仍然可点（能看详情、能选中），只是明确提示进不去 */
+  opacity: 0.96;
+}
+.classic-room-people--locked {
+  color: #FCA5A5;
+  font-weight: 800;
+}
+.classic-room-people--locked::before {
+  background: #F87171;
+  box-shadow: 0 0 calc(5 * var(--u)) rgba(248,113,113,0.8);
+}

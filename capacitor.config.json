@@ -1,0 +1,12 @@
+{
+  "appId": "cn.geju8.tianwang",
+  "appName": "天王扑克",
+  "webDir": "client/dist",
+  "server": {
+    "url": "https://tianwang.geju8.cn/",
+    "cleartext": false
+  },
+  "android": {
+    "backgroundColor": "#0F1A2E"
+  }
+}

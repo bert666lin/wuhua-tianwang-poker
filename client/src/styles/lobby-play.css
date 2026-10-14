@@ -1,0 +1,602 @@
+/* ===== 大厅玩法区 v5 — 三栏布局 =====
+ * 左：垂直功能栏
+ * 中：Logo 卡
+ * 右：经典大卡 + 2x2 四小卡
+ */
+
+.lobby-play {
+  display: flex;
+  gap: var(--sp-6);
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  position: relative;
+  width: 100%;
+}
+
+/* === 左侧垂直功能栏 === */
+.lobby-side-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  width: calc(80 * var(--u));
+  flex-shrink: 0;
+  padding-top: var(--sp-4);
+}
+
+.lobby-side-nav-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(6 * var(--u));
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all var(--anim-fast) var(--ease-standard);
+  font-family: var(--font-sans);
+}
+
+.lobby-side-nav-icon {
+  width: calc(56 * var(--u));
+  height: calc(56 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-card-sm);
+  color: var(--c-gold-500);
+  transition: all var(--anim-normal) var(--ease-spring);
+  position: relative;
+  overflow: hidden;
+}
+.lobby-side-nav-icon::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5), transparent);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  pointer-events: none;
+}
+
+.lobby-side-nav-item:hover .lobby-side-nav-icon {
+  transform: translateY(-3px);
+  box-shadow: var(--sh-card);
+}
+
+.lobby-side-nav-label {
+  font-size: var(--fs-12);
+  font-weight: var(--fw-bold);
+  color: var(--c-text-white);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.lobby-side-nav-dot {
+  position: absolute;
+  top: 2px; right: calc(6 * var(--u));
+  width: calc(10 * var(--u));
+  height: calc(10 * var(--u));
+  border-radius: 50%;
+  background: var(--c-red-500);
+  border: 2px solid var(--c-white);
+}
+
+.lobby-side-nav-spacer {
+  flex: 1;
+}
+
+.lobby-side-nav-tip {
+  text-align: center;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.6;
+  padding-bottom: var(--sp-4);
+}
+
+/* === Logo 卡 === */
+.lobby-logo-card {
+  width: calc(200 * var(--u));
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.lobby-logo-inner {
+  position: relative;
+  width: calc(170 * var(--u));
+  height: calc(170 * var(--u));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  background: var(--c-bg-card-strong);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-3xl);
+  box-shadow: var(--sh-card);
+  overflow: hidden;
+}
+.lobby-logo-inner::before {
+  content: '';
+  position: absolute;
+  top: -30%; left: -30%;
+  width: 100%; height: 100%;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 60%);
+  pointer-events: none;
+}
+.lobby-logo-inner::after {
+  content: '';
+  position: absolute;
+  bottom: -20%; right: -20%;
+  width: 80%; height: 80%;
+  background: radial-gradient(circle, rgba(250, 204, 21, 0.12) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.lobby-logo-placeholder {
+  position: relative;
+  z-index: 1;
+}
+
+.lobby-logo-card-shape {
+  width: calc(64 * var(--u));
+  height: calc(80 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--c-green-500), var(--c-green-700));
+  border: 3px solid var(--c-gold-400);
+  border-radius: calc(10 * var(--u));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+.lobby-logo-card-shape::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 30%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), transparent);
+}
+
+.lobby-logo-card-text {
+  font-size: calc(32 * var(--u));
+  font-weight: var(--fw-black);
+  color: var(--c-gold-300);
+  font-family: serif;
+  position: relative;
+  z-index: 1;
+}
+
+.lobby-logo-name {
+  font-size: var(--fs-18);
+  font-weight: var(--fw-black);
+  color: var(--c-text);
+  letter-spacing: 0.15em;
+  position: relative;
+  z-index: 1;
+}
+
+.lobby-logo-sub {
+  font-size: 9px;
+  color: var(--c-text-mute);
+  letter-spacing: 0.2em;
+  position: relative;
+  z-index: 1;
+}
+
+/* === 玩法卡网格区 ===
+ * 一张经典大卡（占满左侧两行）+ 5 张小卡。3 列布局只剩 2x2 = 4 个位，
+ * 第 5 张小卡会落到隐式的第 3 行；桌面端够高还能看见，横屏手机上就整张
+ * 藏进底部 tabbar 后面。桌面观感保持不变，收窄/矮屏时改 4 列两行放完。
+ */
+.lobby-play-grid {
+  flex: 1;
+  min-width: 0;
+  min-height: calc(420 * var(--u));
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: var(--sp-5);
+  align-items: stretch;
+}
+
+/* === 经典大卡 === */
+.lobby-play-big {
+  grid-column: 1 / 2;
+  grid-row: 1 / 3;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: var(--sp-6);
+  background: var(--c-bg-card-strong);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-2xl);
+  cursor: pointer;
+  transition: all var(--anim-normal) var(--ease-out);
+  box-shadow: var(--sh-card);
+  overflow: hidden;
+  font-family: var(--font-sans);
+  text-align: left;
+}
+
+.lobby-play-big:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--sh-4);
+}
+.lobby-play-big:active { transform: translateY(-1px) scale(0.99); }
+.lobby-play-big:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.lobby-play-big-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at top right, rgba(147, 197, 253, 0.4), transparent 55%),
+    radial-gradient(ellipse at bottom left, rgba(250, 204, 21, 0.15), transparent 50%);
+  pointer-events: none;
+}
+
+.lobby-play-big-tag {
+  position: absolute;
+  top: var(--sp-5); left: var(--sp-5);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: calc(4 * var(--u));
+  padding: calc(5 * var(--u)) calc(12 * var(--u));
+  background: linear-gradient(90deg, var(--c-red-500), var(--c-orange-500));
+  color: #fff;
+  font-size: var(--fs-11);
+  font-weight: var(--fw-black);
+  border-radius: var(--r-pill);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+}
+
+/* 中间人物/皇冠区域 */
+.lobby-play-big-avatar {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -55%);
+  z-index: 1;
+}
+.lobby-play-big-avatar-inner {
+  position: relative;
+  width: calc(140 * var(--u));
+  height: calc(140 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.4), transparent 55%),
+    linear-gradient(135deg, var(--c-blue-400), var(--c-blue-700));
+  border-radius: 50%;
+  color: var(--c-gold-300);
+  box-shadow:
+    0 10px 40px rgba(30, 84, 201, 0.35),
+    inset 0 2px 0 rgba(255, 255, 255, 0.3),
+    0 0 0 4px rgba(255, 255, 255, 0.8);
+}
+.lobby-play-big-avatar-inner::after {
+  content: '';
+  position: absolute;
+  inset: calc(-8 * var(--u));
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  animation: breathe 3s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes breathe {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.08); opacity: 0.2; }
+}
+
+/* 底部信息 */
+.lobby-play-big-bottom {
+  position: relative;
+  z-index: 2;
+}
+
+.lobby-play-big-title {
+  font-size: var(--fs-40);
+  font-weight: var(--fw-black);
+  color: var(--c-text);
+  line-height: 1;
+  letter-spacing: 0.05em;
+}
+
+.lobby-play-big-sub {
+  font-size: var(--fs-13);
+  color: var(--c-blue-600);
+  font-weight: var(--fw-semibold);
+  margin-top: calc(6 * var(--u));
+}
+
+.lobby-play-big-players {
+  display: flex;
+  align-items: center;
+  gap: calc(6 * var(--u));
+  font-size: var(--fs-12);
+  color: var(--c-text-mute);
+  margin-top: var(--sp-4);
+}
+
+.lobby-play-big-online {
+  width: calc(8 * var(--u));
+  height: calc(8 * var(--u));
+  border-radius: 50%;
+  background: var(--c-green-500);
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.6);
+  animation: dot-pulse 2s ease-in-out infinite;
+}
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* === 小玩法卡 === */
+.lobby-play-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--sp-5);
+  background: var(--c-bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-xl);
+  cursor: pointer;
+  transition: all var(--anim-normal) var(--ease-out);
+  box-shadow: var(--sh-card-sm);
+  overflow: hidden;
+  font-family: var(--font-sans);
+  text-align: left;
+  min-height: calc(160 * var(--u));
+}
+
+.lobby-play-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--sh-card);
+  background: rgba(255, 255, 255, 0.8);
+}
+.lobby-play-card:active { transform: translateY(-1px) scale(0.99); }
+
+.lobby-play-card.is-active {
+  border-color: var(--c-gold-400);
+  box-shadow:
+    0 0 0 1.5px var(--c-gold-400),
+    0 0 20px rgba(250, 204, 21, 0.25),
+    var(--sh-card);
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.lobby-play-card-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top right, rgba(147, 197, 253, 0.25), transparent 55%);
+  pointer-events: none;
+}
+
+.lobby-play-card-top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.lobby-play-card-tag {
+  display: inline-block;
+  padding: 2px calc(8 * var(--u));
+  background: linear-gradient(90deg, var(--c-red-500), var(--c-orange-500));
+  color: #fff;
+  font-size: 10px;
+  font-weight: var(--fw-black);
+  border-radius: var(--r-pill);
+  letter-spacing: 0.05em;
+}
+
+.lobby-play-card-sub {
+  font-size: var(--fs-11);
+  color: var(--c-text-mute);
+}
+
+.lobby-play-card-icon {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: calc(48 * var(--u));
+  height: calc(48 * var(--u));
+  margin: 0 auto;
+  background: linear-gradient(135deg, var(--c-blue-400), var(--c-blue-600));
+  border-radius: var(--r-lg);
+  color: white;
+  box-shadow:
+    0 4px 12px rgba(59, 130, 246, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.lobby-play-card-bottom {
+  position: relative;
+  z-index: 1;
+}
+
+.lobby-play-card-title {
+  font-size: var(--fs-20);
+  font-weight: var(--fw-black);
+  color: var(--c-text);
+  line-height: 1.2;
+}
+
+.lobby-play-card-meta {
+  display: flex;
+  align-items: center;
+  gap: calc(5 * var(--u));
+  font-size: var(--fs-12);
+  color: var(--c-text-mute);
+  margin-top: calc(4 * var(--u));
+}
+
+.lobby-play-card-online {
+  width: calc(7 * var(--u));
+  height: calc(7 * var(--u));
+  border-radius: 50%;
+  background: var(--c-green-500);
+}
+
+/* === 右下角悬浮快速开始按钮 === */
+.lobby-fab {
+  position: fixed;
+  right: calc(40 * var(--u));
+  bottom: calc(100 * var(--u));
+  z-index: 30;
+  height: calc(60 * var(--u));
+  padding: 0 calc(28 * var(--u));
+  display: flex;
+  align-items: center;
+  gap: calc(12 * var(--u));
+  border-radius: var(--r-xl);
+  font-size: var(--fs-20);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.05em;
+  color: #7C2D12;
+}
+
+.lobby-fab-sub {
+  font-size: var(--fs-12);
+  font-weight: var(--fw-bold);
+  color: rgba(124, 45, 18, 0.7);
+  line-height: 1.1;
+  text-align: left;
+}
+
+.lobby-fab-main {
+  font-size: var(--fs-22);
+  font-weight: var(--fw-black);
+  letter-spacing: 0.08em;
+}
+
+.lobby-fab-arrow {
+  width: calc(28 * var(--u));
+  height: calc(28 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(124, 45, 18, 0.2);
+  border-radius: 50%;
+  font-size: calc(12 * var(--ut));
+}
+
+/* ============================================================
+   响应式 — 只做布局取舍，尺寸由 tokens.css 的 --u/--ut 统一等比缩放
+   ============================================================ */
+
+/* 平板（1024 一类）：宽度够但比桌面窄，标题/侧栏/FAB 收一档，
+   把横向空间让给玩法卡。这一档 --u 仍是 1px，所以在这里显式指定。 */
+@media (max-width: 1100px) {
+  .lobby-play { gap: var(--sp-4); }
+  .lobby-logo-card { width: calc(160 * var(--u)); }
+  .lobby-logo-inner { width: calc(130 * var(--u)); height: calc(130 * var(--u)); }
+  .lobby-play-big-title { font-size: var(--fs-32); }
+  .lobby-play-card-title { font-size: var(--fs-18); }
+  .lobby-side-nav { width: calc(70 * var(--u)); gap: var(--sp-4); }
+  .lobby-side-nav-icon { width: calc(48 * var(--u)); height: calc(48 * var(--u)); }
+  .lobby-fab {
+    right: calc(24 * var(--u));
+    bottom: calc(100 * var(--u));
+    height: calc(52 * var(--u));
+    padding: 0 calc(20 * var(--u));
+    gap: calc(8 * var(--u));
+  }
+  .lobby-fab-main { font-size: var(--fs-18); }
+  .lobby-fab-sub { font-size: 10px; }
+}
+
+/* 小平板 / 手机横屏：藏掉 Logo 卡和侧栏文字，把宽度让给玩法卡 */
+@media (max-width: 900px) {
+  .lobby-logo-card { display: none; }
+  .lobby-side-nav-label { display: none; }
+  .lobby-side-nav-tip { display: none; }
+}
+
+/* 矮屏（手机横屏为主）：没有第 3 行的空间，小卡改 3 列共 6 个位，
+   最后一张横跨 2 格补满，全部玩法卡都在两行内、都点得到。 */
+@media (max-height: 560px) {
+  .lobby-play-grid {
+    grid-template-columns: 1.3fr repeat(3, 1fr);
+    min-height: 0;
+  }
+  .lobby-play-grid > .lobby-play-card:last-child { grid-column: span 2; }
+}
+
+/* 手机竖屏：三栏改竖排（细则见 lobby-responsive.css） */
+@media (max-width: 640px) {
+  .lobby-play {
+    flex-direction: column;
+    padding: var(--sp-3) 0;
+    height: auto;
+    min-height: 100%;
+  }
+  .lobby-side-nav {
+    width: 100%;
+    flex-direction: row;
+    justify-content: center;
+    padding-top: 0;
+  }
+  .lobby-side-nav-item { flex-direction: column; }
+  .lobby-side-nav-label {
+    display: block;
+    color: var(--c-text);
+    text-shadow: none;
+  }
+  .lobby-side-nav-spacer { display: none; }
+  .lobby-logo-card { display: none; }
+
+  .lobby-play-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+    min-height: auto;
+  }
+  .lobby-play-big {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+  /* 两列下「跨 2 格」正好等于通栏，第 5 张小卡独占一行 */
+  .lobby-play-grid > .lobby-play-card:last-child { grid-column: span 2; }
+  .lobby-play-big-avatar {
+    top: 50%;
+    transform: translate(-50%, -55%);
+  }
+  .lobby-fab-sub { display: none; }
+}
+
+/* 手机横屏（高度小）：装饰性内容退场；卡片去掉固定最小高度，
+   改由网格按剩余高度均分，保证两行玩法卡和 FAB 都落在首屏内。 */
+@media (max-height: 500px) and (orientation: landscape) {
+  .lobby-side-nav-label { display: none; }
+  .lobby-logo-card { display: none; }
+  .lobby-play { padding: var(--sp-2) 0; }
+  .lobby-play-grid { gap: var(--sp-3); }
+  .lobby-play-big,
+  .lobby-play-card { min-height: 0; }
+}

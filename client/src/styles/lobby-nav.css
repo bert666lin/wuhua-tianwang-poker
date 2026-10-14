@@ -1,0 +1,143 @@
+/* ===== 底部 Tabbar v5 — 清新棋牌风 ===== */
+
+.lobby-tabbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: calc(48 * var(--u));
+  height: calc(80 * var(--u));
+  padding: 0 calc(32 * var(--u)) 0 calc(32 * var(--u));
+  padding-bottom: calc(env(safe-area-inset-bottom) + calc(8 * var(--u)));
+  flex-shrink: 0;
+  position: relative;
+  z-index: 20;
+}
+
+/* 毛玻璃背景条 */
+.lobby-tabbar::before {
+  content: '';
+  position: absolute;
+  left: calc(24 * var(--u));
+  right: calc(24 * var(--u));
+  bottom: calc(env(safe-area-inset-bottom) + calc(6 * var(--u)));
+  height: calc(64 * var(--u));
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: calc(32 * var(--u));
+  box-shadow: 0 8px 32px rgba(30, 84, 201, 0.1);
+}
+
+.lobby-tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(3 * var(--u));
+  padding: calc(4 * var(--u)) calc(8 * var(--u));
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all var(--anim-fast) var(--ease-standard);
+  color: var(--c-text-mute);
+  font-family: var(--font-sans);
+  z-index: 1;
+  margin-bottom: calc(4 * var(--u));
+}
+
+.lobby-tab:hover { color: var(--c-text); }
+
+.lobby-tab-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--anim-normal) var(--ease-spring);
+  font-size: calc(20 * var(--ut));
+}
+
+.lobby-tab-label {
+  font-size: var(--fs-12);
+  font-weight: var(--fw-bold);
+}
+
+/* 激活态 */
+.lobby-tab.is-active {
+  color: var(--c-text);
+}
+.lobby-tab.is-active .lobby-tab-icon {
+  transform: translateY(-2px) scale(1.1);
+}
+
+/* 商城按钮（突出的圆形金色） */
+.lobby-tab--shop {
+  transform: translateY(-20px);
+  margin-bottom: calc(-20 * var(--u));
+}
+.lobby-tab--shop .lobby-tab-icon {
+  width: calc(60 * var(--u));
+  height: calc(60 * var(--u));
+  background: var(--grad-button);
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: var(--sh-fab), var(--sh-inset);
+  color: #7C2D12;
+  position: relative;
+  overflow: hidden;
+}
+.lobby-tab--shop .lobby-tab-icon::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.4), transparent);
+  pointer-events: none;
+  border-radius: 50% 50% 0 0;
+}
+.lobby-tab--shop .lobby-tab-label {
+  color: var(--c-gold-700);
+  font-weight: var(--fw-black);
+  margin-top: 2px;
+}
+
+.lobby-tab-badge {
+  position: absolute;
+  top: calc(-2 * var(--u)); right: 0;
+  min-width: calc(18 * var(--u));
+  height: calc(18 * var(--u));
+  padding: 0 calc(5 * var(--u));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--c-red-500);
+  color: #fff;
+  font-size: 10px;
+  font-weight: var(--fw-bold);
+  border-radius: var(--r-pill);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  line-height: 1;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .lobby-tabbar {
+    gap: calc(24 * var(--u));
+    padding: 0 calc(16 * var(--u));
+  }
+  .lobby-tab--shop .lobby-tab-icon {
+    width: calc(52 * var(--u));
+    height: calc(52 * var(--u));
+  }
+  .lobby-tab--shop { transform: translateY(-16px); margin-bottom: calc(-16 * var(--u)); }
+}
+
+@media (min-width: 1024px) {
+  .lobby-tabbar {
+    gap: calc(64 * var(--u));
+  }
+}
+
+/* 触屏设备：tab 等比缩放后仍要留足可点高度 */
+@media (pointer: coarse) {
+  .lobby-tab { min-height: max(40px, calc(30 * var(--u))); }
+}
